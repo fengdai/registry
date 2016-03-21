@@ -75,6 +75,8 @@ public class RegistryImpl extends Registry {
       final Class<?> modelClass = itemSet.model();
       final Class<? extends Mapper<?, ?>> mapperClass = itemSet.mapper();
       final Map<Enum<?>, ItemView> items = new LinkedHashMap<>();
+      final List<Class<?>> knownModelClasses = new LinkedList<>();
+      knownModelClasses.add(modelClass);
       for (Enum<?> enumConstant : itemSetEnum.getEnumConstants()) {
         try {
           Field field = itemSetEnum.getField(enumConstant.name());
@@ -89,12 +91,17 @@ public class RegistryImpl extends Registry {
                 String.format("Can't assign %s Item to %s ItemSet", item.model().getSimpleName(),
                     modelClass.getSimpleName()));
           }
+          if (!knownModelClasses.contains(item.model())) {
+            knownModelClasses.add(item.model());
+          }
           items.put(enumConstant, parse(item));
         } catch (NoSuchFieldException e) {
           throw new AssertionError(e);
         }
       }
-      models.put(modelClass, new MultiModel(mapperClass, items));
+      for (Class<?> knownClass : knownModelClasses) {
+        models.put(knownClass, new MultiModel(mapperClass, items));
+      }
       return this;
     }
 
