@@ -8,6 +8,7 @@ import com.github.fengdai.registry.RegisterAdapter;
 import com.github.fengdai.registry.Registry;
 import com.github.fengdai.registry.sample.model.Address;
 import com.github.fengdai.registry.sample.model.Card;
+import com.github.fengdai.registry.sample.model.Email;
 import java.util.Arrays;
 import java.util.List;
 
@@ -18,7 +19,7 @@ public class SampleActivity extends AppCompatActivity {
           new Address("Abcdefg"), new Card("Dai feng"), new Address("Abcdefg"),
           new Address("Abcdefg"), new Card("Dai feng"), new Address("Abcdefg"),
           new Address("Abcdefg"), new Card("Dai feng", R.mipmap.ic_launcher),
-          new Address("Abcdefg"), new Address("Abcdefg"));
+          new Address("Abcdefg"), new Address("Abcdefg"), new Email("toxic.dai@gmail.com"));
 
   @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);

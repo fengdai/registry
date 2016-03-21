@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class RegistryImpl extends Registry {
   private final Map<Class<?>, Model> models;
@@ -22,28 +23,43 @@ public class RegistryImpl extends Registry {
     this.viewTypeCount = viewTypeCount;
   }
 
-  public View getView(Object model, View convertView, ViewGroup parent) {
-    return getModel(model).getView(model, convertView, parent);
+  public View getView(Object item, View convertView, ViewGroup parent) {
+    return getModel(item).getView(item, convertView, parent);
   }
 
-  private Model getModel(Object model) {
-    Model item = models.get(model.getClass());
-    if (item == null) {
-      throw new RuntimeException("Unregistered type: " + model.getClass().getName());
+  private Model getModel(Object item) {
+    Model model = findModelFor(item);
+    if (model == null) {
+      throw new RuntimeException("Unregistered type: " + item.getClass().getName());
     }
-    return item;
+    return model;
   }
 
-  @Override public int getItemViewType(Object model) {
-    return getModel(model).getItemViewType(model);
+  private Model findModelFor(Object item) {
+    Model model = models.get(item.getClass());
+    if (model == null) {
+      Set<Map.Entry<Class<?>, Model>> entrySet = models.entrySet();
+      for (Map.Entry<Class<?>, Model> entry : entrySet) {
+        if (entry.getKey().isAssignableFrom(item.getClass())) {
+          model = entry.getValue();
+          models.put(item.getClass(), model);
+          break;
+        }
+      }
+    }
+    return model;
+  }
+
+  @Override public int getItemViewType(Object item) {
+    return getModel(item).getItemViewType(item);
   }
 
   public int getViewTypeCount() {
     return viewTypeCount;
   }
 
-  @Override public boolean hasRegistered(Object model) {
-    return models.get(model.getClass()) != null;
+  @Override public boolean hasRegistered(Object item) {
+    return findModelFor(item) != null;
   }
 
   public static class Builder {
@@ -68,7 +84,7 @@ public class RegistryImpl extends Registry {
                 String.format("%s.%s missing @%s annotation.", itemSetEnum.getSimpleName(),
                     enumConstant.name(), Item.class.getSimpleName()));
           }
-          if (item.model() != modelClass) {
+          if (!modelClass.isAssignableFrom(item.model())) {
             throw new IllegalStateException(
                 String.format("Can't assign %s Item to %s ItemSet", item.model().getSimpleName(),
                     modelClass.getSimpleName()));
