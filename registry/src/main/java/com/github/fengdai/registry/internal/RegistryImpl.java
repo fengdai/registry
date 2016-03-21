@@ -1,0 +1,115 @@
+package com.github.fengdai.registry.internal;
+
+import android.view.View;
+import android.view.ViewGroup;
+import com.github.fengdai.registry.Item;
+import com.github.fengdai.registry.ItemSet;
+import com.github.fengdai.registry.Mapper;
+import com.github.fengdai.registry.Registry;
+import com.github.fengdai.registry.ViewProvider;
+import java.lang.reflect.Field;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+public class RegistryImpl extends Registry {
+  private final Map<Class<?>, Model> models;
+  private final int viewTypeCount;
+
+  public RegistryImpl(Map<Class<?>, Model> models, int viewTypeCount) {
+    this.models = models;
+    this.viewTypeCount = viewTypeCount;
+  }
+
+  public View getView(Object model, View convertView, ViewGroup parent) {
+    return getModel(model).getView(model, convertView, parent);
+  }
+
+  private Model getModel(Object model) {
+    Model item = models.get(model.getClass());
+    if (item == null) {
+      throw new RuntimeException("Unregistered type: " + model.getClass().getName());
+    }
+    return item;
+  }
+
+  @Override public int getItemViewType(Object model) {
+    return getModel(model).getItemViewType(model);
+  }
+
+  public int getViewTypeCount() {
+    return viewTypeCount;
+  }
+
+  @Override public boolean hasRegistered(Object model) {
+    return models.get(model.getClass()) != null;
+  }
+
+  public static class Builder {
+    private final Map<Class<?>, Model> models = new LinkedHashMap<>();
+    List<Object> viewTypes = new LinkedList<>();
+
+    public Builder registerItem(Item item) {
+      models.put(item.model(), new ClassModel(parse(item)));
+      return this;
+    }
+
+    public Builder registerItemSet(ItemSet itemSet, Class<? extends Enum<?>> itemSetEnum) {
+      final Class<?> modelClass = itemSet.model();
+      final Class<? extends Mapper<?, ?>> mapperClass = itemSet.mapper();
+      final Map<Enum<?>, ItemView> items = new LinkedHashMap<>();
+      for (Enum<?> enumConstant : itemSetEnum.getEnumConstants()) {
+        try {
+          Field field = itemSetEnum.getField(enumConstant.name());
+          Item item = field.getAnnotation(Item.class);
+          if (item == null) {
+            throw new IllegalStateException(
+                String.format("%s.%s missing @%s annotation.", itemSetEnum.getSimpleName(),
+                    enumConstant.name(), Item.class.getSimpleName()));
+          }
+          if (item.model() != modelClass) {
+            throw new IllegalStateException(
+                String.format("Can't assign %s Item to %s ItemSet", item.model().getSimpleName(),
+                    modelClass.getSimpleName()));
+          }
+          items.put(enumConstant, parse(item));
+        } catch (NoSuchFieldException e) {
+          throw new AssertionError(e);
+        }
+      }
+      models.put(modelClass, new MultiModel(mapperClass, items));
+      return this;
+    }
+
+    private ItemView parse(Item item) {
+      Class<? extends ViewProvider<?>> viewProviderClass = item.view();
+      int viewLayoutRes = item.layout();
+      if (viewLayoutRes != -1 && viewProviderClass != Item.NONE.class) {
+        // TODO message
+        throw new IllegalStateException();
+      }
+      ItemView itemView;
+      if (viewLayoutRes != -1) {
+        itemView = new ItemView(typeOf(viewLayoutRes), viewLayoutRes, item.binder());
+      } else if (viewProviderClass != Item.NONE.class) {
+        itemView = new ItemView(typeOf(viewProviderClass), viewProviderClass, item.binder());
+      } else {
+        // TODO message
+        throw new IllegalStateException();
+      }
+      return itemView;
+    }
+
+    private int typeOf(Object view) {
+      if (!viewTypes.contains(view)) {
+        viewTypes.add(view);
+      }
+      return viewTypes.indexOf(view);
+    }
+
+    public RegistryImpl build() {
+      return new RegistryImpl(models, viewTypes.size());
+    }
+  }
+}
