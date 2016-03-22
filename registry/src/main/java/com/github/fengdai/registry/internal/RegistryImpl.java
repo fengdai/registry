@@ -23,16 +23,43 @@ public class RegistryImpl extends Registry {
     this.viewTypeCount = viewTypeCount;
   }
 
-  public View getView(Object item, View convertView, ViewGroup parent) {
-    return getModel(item).getView(item, convertView, parent);
+  @Override public View getView(Object item, View convertView, ViewGroup parent) {
+    ItemView itemView = getItemView(item);
+    if (convertView == null) {
+      convertView = itemView.providerView(item, parent);
+    }
+    itemView.bindView(item, convertView);
+    return convertView;
   }
 
-  private Model getModel(Object item) {
+  @Override public int getItemViewType(Object item) {
+    return getItemView(item).getItemViewType();
+  }
+
+  @Override public int getViewTypeCount() {
+    return viewTypeCount;
+  }
+
+  @Override public boolean hasRegistered(Object item) {
+    return findItemViewFor(item) != null;
+  }
+
+  private ItemView getItemView(Object item) {
     Model model = findModelFor(item);
     if (model == null) {
-      throw new RuntimeException("Unregistered type: " + item.getClass().getName());
+      throw new IllegalStateException("Unregistered type: " + item.getClass().getName());
     }
-    return model;
+    ItemView itemView = model.getItemView(item);
+    if (itemView == null) {
+      // TODO message
+      throw new IllegalStateException("");
+    }
+    return itemView;
+  }
+
+  private ItemView findItemViewFor(Object item) {
+    Model model = findModelFor(item);
+    return model != null ? model.getItemView(item) : null;
   }
 
   private Model findModelFor(Object item) {
@@ -48,18 +75,6 @@ public class RegistryImpl extends Registry {
       }
     }
     return model;
-  }
-
-  @Override public int getItemViewType(Object item) {
-    return getModel(item).getItemViewType(item);
-  }
-
-  public int getViewTypeCount() {
-    return viewTypeCount;
-  }
-
-  @Override public boolean hasRegistered(Object item) {
-    return findModelFor(item) != null;
   }
 
   public static class Builder {

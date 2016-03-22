@@ -14,8 +14,8 @@ public class MultiModel extends Model {
     this.itemMap = itemMap;
   }
 
-  @Override public ItemView getItemView(Object model) {
-    return itemMap.get(getMapper().map(model));
+  @Override public ItemView getItemView(Object item) {
+    return itemMap.get(getMapper().map(item));
   }
 
   Mapper<Object, ? extends Enum<?>> getMapper() {
