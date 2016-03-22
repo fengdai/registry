@@ -82,7 +82,7 @@ public class RegistryImpl extends Registry {
     List<Object> viewTypes = new LinkedList<>();
 
     public Builder registerItem(Item item) {
-      models.put(item.model(), new ClassModel(parse(item)));
+      models.put(item.model(), new ClassModel(item.model(), parse(item)));
       return this;
     }
 
@@ -115,7 +115,7 @@ public class RegistryImpl extends Registry {
         }
       }
       for (Class<?> knownClass : knownModelClasses) {
-        models.put(knownClass, new MultiModel(mapperClass, items));
+        models.put(knownClass, new MultiModel(modelClass, mapperClass, items));
       }
       return this;
     }

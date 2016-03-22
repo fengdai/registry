@@ -1,13 +1,14 @@
 package com.github.fengdai.registry.internal;
 
-public class ClassModel extends Model {
+class ClassModel extends Model {
   private final ItemView itemView;
 
-  public ClassModel(ItemView itemView) {
+  ClassModel(Class<?> modelClass, ItemView itemView) {
+    super(modelClass);
     this.itemView = itemView;
   }
 
-  @Override public ItemView getItemView(Object model) {
+  @Override ItemView getItemView(Object model) {
     return this.itemView;
   }
 }

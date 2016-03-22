@@ -1,6 +1,15 @@
 package com.github.fengdai.registry.internal;
 
 abstract class Model {
+  protected final Class<?> modelClass;
 
-  public abstract ItemView getItemView(Object item);
+  Model(Class<?> modelClass) {
+    this.modelClass = modelClass;
+  }
+
+  public Class<?> getModelClass() {
+    return modelClass;
+  }
+
+  abstract ItemView getItemView(Object item);
 }

@@ -3,18 +3,19 @@ package com.github.fengdai.registry.internal;
 import com.github.fengdai.registry.Mapper;
 import java.util.Map;
 
-public class MultiModel extends Model {
+class MultiModel extends Model {
   private final Class<? extends Mapper<?, ? extends Enum<?>>> mapperClass;
   private Mapper<Object, ? extends Enum<?>> mapper = null;
   private final Map<? extends Enum<?>, ItemView> itemMap;
 
-  public MultiModel(Class<? extends Mapper<?, ? extends Enum<?>>> mapperClass,
+  MultiModel(Class<?> modelClass, Class<? extends Mapper<?, ? extends Enum<?>>> mapperClass,
       Map<? extends Enum<?>, ItemView> itemMap) {
+    super(modelClass);
     this.mapperClass = mapperClass;
     this.itemMap = itemMap;
   }
 
-  @Override public ItemView getItemView(Object item) {
+  @Override ItemView getItemView(Object item) {
     return itemMap.get(getMapper().map(item));
   }
 
