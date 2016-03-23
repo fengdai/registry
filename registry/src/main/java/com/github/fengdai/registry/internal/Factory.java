@@ -6,8 +6,10 @@ import com.github.fengdai.registry.Item;
 import com.github.fengdai.registry.ItemSet;
 import com.github.fengdai.registry.Mapper;
 import com.github.fengdai.registry.Registry;
+import com.github.fengdai.registry.ViewBinder;
 import com.github.fengdai.registry.ViewProvider;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,7 +39,8 @@ public class Factory {
   }
 
   private Factory registerItem(Item item) {
-    models.put(item.model(), new ClassModel(item.model(), parse(item)));
+    ItemView itemView = parse(item);
+    models.put(itemView.getModelClass(), new ClassModel(itemView.getModelClass(), parse(item)));
     return this;
   }
 
@@ -48,8 +51,9 @@ public class Factory {
           String.format("%s missing @%s annotation.", itemSetEnum.getClass().getSimpleName(),
               ItemSet.class.getSimpleName()));
     }
-    final Class<?> modelClass = itemSet.model();
     final Class<? extends Mapper<?, ?>> mapperClass = itemSet.mapper();
+    final Class<?> modelClass =
+        (Class<?>) ((ParameterizedType) mapperClass.getGenericInterfaces()[0]).getActualTypeArguments()[0];
     final Map<Enum<?>, ItemView> items = new LinkedHashMap<>();
     final List<Class<?>> knownModelClasses = new LinkedList<>();
     knownModelClasses.add(modelClass);
@@ -65,13 +69,16 @@ public class Factory {
               String.format("%s.%s missing @%s annotation.", itemSetEnum.getSimpleName(),
                   enumConstant.name(), Item.class.getSimpleName()));
         }
-        if (!modelClass.isAssignableFrom(item.model())) {
+        Class<? extends ViewBinder<?, ?>> viewBinderClass = item.binder();
+        Class<?> itemModelClass =
+            (Class<?>) ((ParameterizedType) viewBinderClass.getGenericInterfaces()[0]).getActualTypeArguments()[0];
+        if (!modelClass.isAssignableFrom(itemModelClass)) {
           throw new IllegalStateException(
-              String.format("Can't assign %s Item to %s ItemSet", item.model().getSimpleName(),
+              String.format("Can't assign %s Item to %s ItemSet", itemModelClass.getSimpleName(),
                   modelClass.getSimpleName()));
         }
-        if (!knownModelClasses.contains(item.model())) {
-          knownModelClasses.add(item.model());
+        if (!knownModelClasses.contains(itemModelClass)) {
+          knownModelClasses.add(itemModelClass);
         }
         items.put(enumConstant, parse(item));
       } catch (NoSuchFieldException e) {
@@ -85,6 +92,9 @@ public class Factory {
   }
 
   private ItemView parse(Item item) {
+    Class<? extends ViewBinder<?, ?>> viewBinderClass = item.binder();
+    Class<?> modelClass =
+        (Class<?>) ((ParameterizedType) viewBinderClass.getGenericInterfaces()[0]).getActualTypeArguments()[0];
     Class<? extends ViewProvider<?>> viewProviderClass = item.view();
     int viewLayoutRes = item.layout();
     if (viewLayoutRes != -1 && viewProviderClass != Item.NONE.class) {
@@ -93,9 +103,10 @@ public class Factory {
     }
     ItemView itemView;
     if (viewLayoutRes != -1) {
-      itemView = new ItemView(typeOf(viewLayoutRes), viewLayoutRes, item.binder());
+      itemView = new ItemView(modelClass, typeOf(viewLayoutRes), viewLayoutRes, viewBinderClass);
     } else if (viewProviderClass != Item.NONE.class) {
-      itemView = new ItemView(typeOf(viewProviderClass), viewProviderClass, item.binder());
+      itemView =
+          new ItemView(modelClass, typeOf(viewProviderClass), viewProviderClass, viewBinderClass);
     } else {
       // TODO message
       throw new IllegalStateException();

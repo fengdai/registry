@@ -8,35 +8,30 @@ import com.github.fengdai.registry.Mapper;
 import com.github.fengdai.registry.sample.binder.AddressBinder;
 import com.github.fengdai.registry.sample.binder.CardBinder;
 import com.github.fengdai.registry.sample.binder.IconCardBinder;
-import com.github.fengdai.registry.sample.model.Address;
 import com.github.fengdai.registry.sample.model.Card;
 import com.github.fengdai.registry.sample.provider.TextViewProvider;
 
 @Adapter(
     items = @Item(
-        model = Address.class,
-        view = TextViewProvider.class,
-        binder = AddressBinder.class),
+        binder = AddressBinder.class,
+        view = TextViewProvider.class),
     itemSets = SampleItems.CardItemSet.class)
 public class SampleItems {
 
   @ItemSet(
-      model = Card.class,
       mapper = CardItemSet.CardMapper.class)
   public enum CardItemSet {
 
     @Ignore UNKNOWN,
 
     @Item(
-        model = Card.class,
-        layout = android.R.layout.activity_list_item,
-        binder = IconCardBinder.class)
+        binder = IconCardBinder.class,
+        layout = android.R.layout.activity_list_item)
     ICON_AND_TEXT,
 
     @Item(
-        model = Card.class,
-        view = TextViewProvider.class,
-        binder = CardBinder.class)
+        binder = CardBinder.class,
+        view = TextViewProvider.class)
     TEXT_ONLY;
 
     public static class CardMapper implements Mapper<Card, CardItemSet> {

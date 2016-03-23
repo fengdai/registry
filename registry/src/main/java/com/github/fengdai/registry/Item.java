@@ -11,13 +11,11 @@ import java.lang.annotation.Target;
 @Target({ ElementType.TYPE, ElementType.FIELD })
 public @interface Item {
 
-  Class<?> model();
+  Class<? extends ViewBinder<?, ?>> binder();
 
   @LayoutRes int layout() default -1;
 
   Class<? extends ViewProvider<?>> view() default NONE.class;
-
-  Class<? extends ViewBinder<?, ?>> binder();
 
   interface NONE extends ViewProvider<View> {
   }

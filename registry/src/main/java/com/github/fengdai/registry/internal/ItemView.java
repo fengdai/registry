@@ -14,6 +14,8 @@ class ItemView {
   private static final Map<Class<? extends ViewBinder<?, ?>>, ViewBinder<Object, View>> BINDERS =
       new LinkedHashMap<>();
 
+  private final Class<?> modelClass;
+
   private final int itemViewType;
 
   private final Class<? extends ViewProvider<?>> viewProviderClass;
@@ -22,15 +24,18 @@ class ItemView {
   private ViewProvider<View> viewProvider = null;
   private ViewBinder<Object, View> viewBinder = null;
 
-  ItemView(int itemViewType, Class<? extends ViewProvider<?>> viewProviderClass,
+  ItemView(Class<?> modelClass, int itemViewType,
+      Class<? extends ViewProvider<?>> viewProviderClass,
       Class<? extends ViewBinder<?, ?>> viewBinderClass) {
+    this.modelClass = modelClass;
     this.itemViewType = itemViewType;
     this.viewProviderClass = viewProviderClass;
     this.viewBinderClass = viewBinderClass;
   }
 
-  ItemView(int itemViewType, final int layoutRes,
+  ItemView(Class<?> modelClass, int itemViewType, final int layoutRes,
       Class<? extends ViewBinder<?, ?>> viewBinderClass) {
+    this.modelClass = modelClass;
     this.itemViewType = itemViewType;
     this.viewProviderClass = null;
     this.viewBinderClass = viewBinderClass;
@@ -39,6 +44,10 @@ class ItemView {
         return LayoutInflater.from(parent.getContext()).inflate(layoutRes, parent, false);
       }
     };
+  }
+
+  public Class<?> getModelClass() {
+    return modelClass;
   }
 
   int getItemViewType() {
