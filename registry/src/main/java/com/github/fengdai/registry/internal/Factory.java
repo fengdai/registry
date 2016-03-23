@@ -1,6 +1,7 @@
 package com.github.fengdai.registry.internal;
 
 import com.github.fengdai.registry.Adapter;
+import com.github.fengdai.registry.Ignore;
 import com.github.fengdai.registry.Item;
 import com.github.fengdai.registry.ItemSet;
 import com.github.fengdai.registry.Mapper;
@@ -55,6 +56,9 @@ public class Factory {
     for (Enum<?> enumConstant : itemSetEnum.getEnumConstants()) {
       try {
         Field field = itemSetEnum.getField(enumConstant.name());
+        if (field.getAnnotation(Ignore.class) != null) {
+          continue;
+        }
         Item item = field.getAnnotation(Item.class);
         if (item == null) {
           throw new IllegalStateException(

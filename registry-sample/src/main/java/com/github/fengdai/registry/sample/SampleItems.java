@@ -1,6 +1,7 @@
 package com.github.fengdai.registry.sample;
 
 import com.github.fengdai.registry.Adapter;
+import com.github.fengdai.registry.Ignore;
 import com.github.fengdai.registry.Item;
 import com.github.fengdai.registry.ItemSet;
 import com.github.fengdai.registry.Mapper;
@@ -23,6 +24,8 @@ public class SampleItems {
       model = Card.class,
       mapper = CardItemSet.CardMapper.class)
   public enum CardItemSet {
+
+    @Ignore UNKNOWN,
 
     @Item(
         model = Card.class,
