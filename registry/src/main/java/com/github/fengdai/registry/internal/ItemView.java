@@ -1,6 +1,5 @@
 package com.github.fengdai.registry.internal;
 
-import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,8 +35,8 @@ class ItemView {
     this.viewProviderClass = null;
     this.viewBinderClass = viewBinderClass;
     this.viewProvider = new ViewProvider<View>() {
-      @Override public View provideView(Context context) {
-        return LayoutInflater.from(context).inflate(layoutRes, null, false);
+      @Override public View provideView(ViewGroup parent) {
+        return LayoutInflater.from(parent.getContext()).inflate(layoutRes, parent, false);
       }
     };
   }
@@ -54,7 +53,7 @@ class ItemView {
         throw new RuntimeException("Unable provide view for " + model.getClass().getName(), e);
       }
     }
-    return viewProvider.provideView(parent.getContext());
+    return viewProvider.provideView(parent);
   }
 
   void bindView(Object model, View convertView) {
