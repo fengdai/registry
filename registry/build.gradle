@@ -1,18 +1,14 @@
-apply plugin: 'com.android.library'
+apply plugin: 'java'
 
-android {
-  compileSdkVersion 23
-  buildToolsVersion "23.0.2"
+targetCompatibility = JavaVersion.VERSION_1_7
+sourceCompatibility = JavaVersion.VERSION_1_7
 
-  defaultConfig {
-    minSdkVersion 1
-    targetSdkVersion 23
-    versionCode 1
-    versionName "1.0"
-  }
+configurations {
+  provided
+  compile.extendsFrom provided
 }
 
 dependencies {
   compile fileTree(dir: 'libs', include: ['*.jar'])
-  compile 'com.android.support:support-annotations:23.2.0'
+  provided 'com.google.android:android:2.1.2'
 }

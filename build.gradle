@@ -4,6 +4,7 @@ buildscript {
   }
   dependencies {
     classpath 'com.android.tools.build:gradle:1.5.0'
+    classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
   }
 }
 
@@ -15,4 +16,13 @@ allprojects {
 
 task clean(type: Delete) {
   delete rootProject.buildDir
+}
+
+ext {
+  minSdkVersion = 7
+  targetSdkVersion = 23
+  compileSdkVersion = 23
+  buildToolsVersion = '23.0.2'
+  sourceCompatibilityVersion = JavaVersion.VERSION_1_7
+  targetCompatibilityVersion = JavaVersion.VERSION_1_7
 }

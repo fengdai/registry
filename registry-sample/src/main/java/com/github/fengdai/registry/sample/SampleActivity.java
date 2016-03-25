@@ -32,7 +32,7 @@ public class SampleActivity extends AppCompatActivity {
 
   class Adapter extends RegisterAdapter {
     protected Adapter() {
-      super(Registry.create(SampleItems.class));
+      super(Registry.create(SampleList.class));
     }
 
     @Override public int getCount() {

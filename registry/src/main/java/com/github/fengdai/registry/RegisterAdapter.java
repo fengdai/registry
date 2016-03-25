@@ -12,11 +12,17 @@ public abstract class RegisterAdapter extends BaseAdapter {
   }
 
   @Override public View getView(int position, View convertView, ViewGroup parent) {
-    return registry.getView(getItem(position), convertView, parent);
+    Object item = getItem(position);
+    Registry.ItemView<Object, View> itemView = registry.getItemView(item);
+    if (convertView == null) {
+      convertView = itemView.providerView(parent);
+    }
+    itemView.bindView(item, convertView);
+    return convertView;
   }
 
   @Override public int getItemViewType(int position) {
-    return registry.getItemViewType(getItem(position));
+    return registry.getItemView(getItem(position)).getType();
   }
 
   @Override public int getViewTypeCount() {
