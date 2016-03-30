@@ -4,19 +4,19 @@ Registry provides a mechanism for mapping ListView's items to their itemViews. I
 
 #How to use
 
-Say, we have a multi-view-type ListView called FooBarList which displays two kind of item: Foo and Bar.
+Say, we have a multi-view-type ListView which displays two kind of item: Foo and Bar.
 
-1. Define an annotation named FooBarListRegistry with ```@Register``` annotation.
+1. Define an annotation named FooBarList with ```@Register``` annotation.
 ```java
 @Register
-public @interface FooBarListRegistry {
+public @interface FooBarList {
 }
 ```
 
 2. Define ```ViewBinder``` for mapping Foo and Bar to their views.
 ```java
 // For Foo.
-@FooBarListRegistry // Indicates it's for FooBarListRegistry.
+@FooBarList // Indicates it's for FooBarList.
 @Item(layout = R.layout.text_view) // Provides layoutRes for Foo's view.
 public class FooBinder implements ViewBinder<Foo, TextView> { // R.layout.text_view is a TextView.
   @Override public void bindView(Foo item, TextView view) {
@@ -26,7 +26,7 @@ public class FooBinder implements ViewBinder<Foo, TextView> { // R.layout.text_v
 ```
 ```java
 // For Bar.
-@FooBarListRegistry
+@FooBarList
 @item(layout = R.layout.linear_layout)
 public class BarBinder implements ViewBinder<Bar, LinearLayout> { // R.layout.linear_layout is a LinearLayout.
   @Override public void bindView(Bar item, LinearLayout view) {
@@ -35,12 +35,12 @@ public class BarBinder implements ViewBinder<Bar, LinearLayout> { // R.layout.li
 }
 ```
 
-3. Create Registry for FooBarListRegistry and define the ListView's Adapter.
+3. Create Registry for FooBarList and define the ListView's Adapter.
 ```java
 public class Adapter extends RegisterAdapter {
   protected Adapter() {
     // Create the Registry.
-    super(Registry.create(FooBarListRegistry.class));
+    super(Registry.create(FooBarList.class));
   }
   // ...
 }
