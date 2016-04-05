@@ -1,7 +1,5 @@
 package com.github.fengdai.registry.compiler;
 
-import com.github.fengdai.registry.internal.Model;
-import com.github.fengdai.registry.internal.RegistryImpl;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -16,7 +14,12 @@ import java.util.Map;
 import javax.lang.model.element.Modifier;
 
 final class RegistryClass {
-  private static final ClassName REGISTRY_IMPL = ClassName.get(RegistryImpl.class);
+  private static final ClassName REGISTRY_IMPL =
+      ClassName.get("com.github.fengdai.registry.internal", "RegistryImpl");
+  private static final ClassName MODEL =
+      ClassName.get("com.github.fengdai.registry.internal", "Model");
+  private static final ClassName MODEL_BUILDER =
+      ClassName.get("com.github.fengdai.registry.internal", "Model", "Builder");
 
   private final String classPackage;
   private final String className;
@@ -65,7 +68,7 @@ final class RegistryClass {
 
   private MethodSpec createToOneModelMethod(ToOneBinding binding) {
     MethodSpec.Builder result = buildCreateModelMethod(binding);
-    result.addStatement("$T<$T> builder = Model.oneToOne($T.class)", Model.Builder.class,
+    result.addStatement("$T<$T> builder = Model.oneToOne($T.class)", MODEL_BUILDER,
         ClassName.get(binding.getModelType()), ClassName.get(binding.getModelType()));
     ItemViewClass itemViewClass = binding.getItemViewClass();
     addItemView(itemViewClass, result);
@@ -75,7 +78,7 @@ final class RegistryClass {
 
   private MethodSpec createToManyModelMethod(ToManyBinding binding) {
     MethodSpec.Builder result = buildCreateModelMethod(binding);
-    result.addStatement("$T<$T> builder = Model.oneToMany($T.class, $T.class)", Model.Builder.class,
+    result.addStatement("$T<$T> builder = Model.oneToMany($T.class, $T.class)", MODEL_BUILDER,
         ClassName.get(binding.getModelType()), ClassName.get(binding.getModelType()),
         ClassName.get(binding.getMapperType()));
     for (ItemViewClass itemViewClass : binding.getItemViewClasses()) {
@@ -88,8 +91,7 @@ final class RegistryClass {
   private static MethodSpec.Builder buildCreateModelMethod(Binding binding) {
     return MethodSpec.methodBuilder(createModelMethodName(binding))
         .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
-        .returns(ParameterizedTypeName.get(ClassName.get(Model.class),
-            ClassName.get(binding.getModelType())));
+        .returns(ParameterizedTypeName.get(MODEL, ClassName.get(binding.getModelType())));
   }
 
   private void addItemView(ItemViewClass itemViewClass, MethodSpec.Builder result) {
@@ -109,8 +111,7 @@ final class RegistryClass {
             returns(ParameterizedTypeName.get(ClassName.get(Map.class),
                 ParameterizedTypeName.get(ClassName.get(Class.class),
                     WildcardTypeName.subtypeOf(TypeName.OBJECT)),
-                ParameterizedTypeName.get(ClassName.get(Model.class),
-                    WildcardTypeName.subtypeOf(TypeName.OBJECT))));
+                ParameterizedTypeName.get(MODEL, WildcardTypeName.subtypeOf(TypeName.OBJECT))));
     result.addStatement("Map<Class<?>, Model<?>> map = new $T<>()", LinkedHashMap.class);
     for (Binding binding : bindings) {
       result.addStatement("map.put($T.class, $L())", ClassName.get(binding.getModelType()),

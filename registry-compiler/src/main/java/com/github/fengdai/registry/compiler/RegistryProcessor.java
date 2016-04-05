@@ -1,9 +1,5 @@
 package com.github.fengdai.registry.compiler;
 
-import com.github.fengdai.registry.Item;
-import com.github.fengdai.registry.Mapper;
-import com.github.fengdai.registry.Register;
-import com.github.fengdai.registry.ViewBinder;
 import com.google.auto.common.AnnotationMirrors;
 import com.google.auto.common.MoreElements;
 import com.google.auto.service.AutoService;
@@ -37,6 +33,11 @@ import static com.google.auto.common.AnnotationMirrors.getAnnotationValue;
 @AutoService(Processor.class)
 public class RegistryProcessor extends AbstractProcessor {
   private static final String REGISTRY_CLASS_SUFFIX = "$$Registry";
+  private static final String REGISTER_TYPE = "com.github.fengdai.registry.Register";
+  private static final String ITEM_TYPE = "com.github.fengdai.registry.Item";
+  private static final String ITEM_NONE_TYPE = "com.github.fengdai.registry.Item.NONE";
+  private static final String MAPPER_TYPE = "com.github.fengdai.registry.Mapper";
+  private static final String VIEW_BINDER_TYPE = "com.github.fengdai.registry.ViewBinder";
 
   private Elements elementUtils;
   private Filer filer;
@@ -49,7 +50,7 @@ public class RegistryProcessor extends AbstractProcessor {
 
   @Override public Set<String> getSupportedAnnotationTypes() {
     Set<String> types = new LinkedHashSet<>();
-    types.add(Register.class.getCanonicalName());
+    types.add(REGISTER_TYPE);
     return types;
   }
 
@@ -58,22 +59,27 @@ public class RegistryProcessor extends AbstractProcessor {
   }
 
   @Override public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment env) {
-    Map<TypeElement, RegistryClass> registryClassMap = findAndParse(env);
-    for (Map.Entry<TypeElement, RegistryClass> entry : registryClassMap.entrySet()) {
-      TypeElement typeElement = entry.getKey();
-      RegistryClass registryClass = entry.getValue();
-      try {
-        registryClass.brewJava().writeTo(filer);
-      } catch (IOException e) {
-        error(typeElement, "Unable to write Registry for %s: %s", typeElement, e.getMessage());
+    for (TypeElement annotation : annotations) {
+      if (!REGISTER_TYPE.equals(annotation.asType().toString())) {
+        continue;
+      }
+      Map<TypeElement, RegistryClass> registryClassMap = findAndParse(env, annotation);
+      for (Map.Entry<TypeElement, RegistryClass> entry : registryClassMap.entrySet()) {
+        TypeElement typeElement = entry.getKey();
+        RegistryClass registryClass = entry.getValue();
+        try {
+          registryClass.brewJava().writeTo(filer);
+        } catch (IOException e) {
+          error(typeElement, "Unable to write Registry for %s: %s", typeElement, e.getMessage());
+        }
       }
     }
     return true;
   }
 
-  private Map<TypeElement, RegistryClass> findAndParse(RoundEnvironment env) {
+  private Map<TypeElement, RegistryClass> findAndParse(RoundEnvironment env, TypeElement register) {
     Map<TypeElement, RegistryClass> registryClassMap = new LinkedHashMap<>();
-    for (Element element : env.getElementsAnnotatedWith(Register.class)) {
+    for (Element element : env.getElementsAnnotatedWith(register)) {
       TypeElement annotationElement = (TypeElement) element;
       // Find all Mappers.
       Map<TypeElement, TypeElement> mapperMap = findAllMappers(annotationElement);
@@ -106,7 +112,7 @@ public class RegistryProcessor extends AbstractProcessor {
     } catch (Exception e) {
       return;
     }
-    TypeElement modelType = getInterfaceTypeArgument(binderElement, ViewBinder.class, 0);
+    TypeElement modelType = getInterfaceTypeArgument(binderElement, VIEW_BINDER_TYPE, 0);
     Binding binding = bindingMap.get(modelType);
     if (binding == null) {
       TypeElement mapperType = mapperMap.get(modelType);
@@ -130,9 +136,9 @@ public class RegistryProcessor extends AbstractProcessor {
   }
 
   private ItemViewClass parseItem(TypeElement binderType, List<Object> viewType) throws Exception {
-    AnnotationMirror item = MoreElements.getAnnotationMirror(binderType, Item.class).get();
+    AnnotationMirror item = getAnnotationMirror(binderType, ITEM_TYPE);
     if (item == null) {
-      error(binderType, "Missing @%s annotation." + Item.class.getSimpleName());
+      error(binderType, "Missing @%s annotation." + ITEM_TYPE);
       throw new AssertionError();
     }
     int layoutRes = (int) AnnotationMirrors.getAnnotationValue(item, "layout").getValue();
@@ -140,7 +146,7 @@ public class RegistryProcessor extends AbstractProcessor {
         (TypeElement) ((DeclaredType) AnnotationMirrors.getAnnotationValue(item, "view").getValue())
             .asElement();
     boolean specifiedViewProvider =
-        !viewProviderType.getQualifiedName().contentEquals(Item.NONE.class.getCanonicalName());
+        !viewProviderType.getQualifiedName().contentEquals(ITEM_NONE_TYPE);
     if (layoutRes == -1 && !specifiedViewProvider) {
       // TODO: 16/3/27 Error message.
       error(binderType, "");
@@ -159,12 +165,11 @@ public class RegistryProcessor extends AbstractProcessor {
 
   private Map<TypeElement, TypeElement> findAllMappers(Element annotationElement) {
     Map<TypeElement, TypeElement> mapperMap = new LinkedHashMap<>();
-    AnnotationMirror register =
-        MoreElements.getAnnotationMirror(annotationElement, Register.class).get();
+    AnnotationMirror register = getAnnotationMirror(annotationElement, REGISTER_TYPE);
     List<TypeElement> mappers = getAnnotationElements(register, "mappers");
     for (TypeElement mapper : mappers) {
       if (isValid(mapper)) {
-        TypeElement modelType = getInterfaceTypeArgument(mapper, Mapper.class, 0);
+        TypeElement modelType = getInterfaceTypeArgument(mapper, MAPPER_TYPE, 0);
         if (mapperMap.get(modelType) != null) {
           // TODO: 16/3/27 Error message.
           error(annotationElement, "Conflict: ");
@@ -187,16 +192,11 @@ public class RegistryProcessor extends AbstractProcessor {
     return true;
   }
 
-  static TypeElement getInterfaceTypeArgument(TypeElement element, Class<?> interfaceClass,
+  static TypeElement getInterfaceTypeArgument(TypeElement element, String interfaceClassName,
       int typeArgumentIndex) {
-    if (!interfaceClass.isInterface()) {
-      throw new AssertionError(
-          String.format("%s isn't an interface.", interfaceClass.getSimpleName()));
-    }
     for (TypeMirror mirror : element.getInterfaces()) {
       DeclaredType type = (DeclaredType) mirror;
-      if (((TypeElement) type.asElement()).getQualifiedName()
-          .contentEquals(interfaceClass.getCanonicalName())) {
+      if (((TypeElement) type.asElement()).getQualifiedName().contentEquals(interfaceClassName)) {
         return (TypeElement) ((DeclaredType) type.getTypeArguments()
             .get(typeArgumentIndex)).asElement();
       }
@@ -217,13 +217,19 @@ public class RegistryProcessor extends AbstractProcessor {
     }).toList();
   }
 
-  private String getPackageName(TypeElement type) {
-    return elementUtils.getPackageOf(type).getQualifiedName().toString();
+  static AnnotationMirror getAnnotationMirror(Element element, String annotationClassName) {
+    for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
+      TypeElement annotationTypeElement =
+          MoreElements.asType(annotationMirror.getAnnotationType().asElement());
+      if (annotationTypeElement.getQualifiedName().contentEquals(annotationClassName)) {
+        return annotationMirror;
+      }
+    }
+    return null;
   }
 
-  private String getFqcn(TypeElement typeElement) {
-    String packageName = getPackageName(typeElement);
-    return packageName + "." + getClassName(typeElement, packageName);
+  private String getPackageName(TypeElement type) {
+    return elementUtils.getPackageOf(type).getQualifiedName().toString();
   }
 
   private static String getClassName(TypeElement type, String packageName) {
