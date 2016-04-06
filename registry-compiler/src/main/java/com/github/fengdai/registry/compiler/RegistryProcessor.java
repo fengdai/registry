@@ -35,7 +35,7 @@ public class RegistryProcessor extends AbstractProcessor {
   private static final String REGISTRY_CLASS_SUFFIX = "$$Registry";
   private static final String REGISTER_TYPE = "com.github.fengdai.registry.Register";
   private static final String LAYOUT_TYPE = "com.github.fengdai.registry.Layout";
-  private static final String PROVIDER_TYPE = "com.github.fengdai.registry.Provider";
+  private static final String FACTORY_TYPE = "com.github.fengdai.registry.Factory";
   private static final String MAPPER_TYPE = "com.github.fengdai.registry.Mapper";
   private static final String VIEW_BINDER_TYPE = "com.github.fengdai.registry.ViewBinder";
 
@@ -137,7 +137,7 @@ public class RegistryProcessor extends AbstractProcessor {
 
   private ItemViewClass parseItem(TypeElement binderType, List<Object> viewType) throws Exception {
     AnnotationMirror layout = getAnnotationMirror(binderType, LAYOUT_TYPE);
-    AnnotationMirror provider = getAnnotationMirror(binderType, PROVIDER_TYPE);
+    AnnotationMirror provider = getAnnotationMirror(binderType, FACTORY_TYPE);
     Object view = null;
     if (layout != null) {
       view = AnnotationMirrors.getAnnotationValue(layout, "value").getValue();
@@ -147,7 +147,7 @@ public class RegistryProcessor extends AbstractProcessor {
     }
     if (view == null) {
       // TODO: 16/3/27 Error message.
-      error(binderType, "Missing @%s or @%s annotation." + LAYOUT_TYPE + PROVIDER_TYPE);
+      error(binderType, "Missing @%s or @%s annotation." + LAYOUT_TYPE + FACTORY_TYPE);
       throw new AssertionError();
     }
     if (!viewType.contains(view)) {

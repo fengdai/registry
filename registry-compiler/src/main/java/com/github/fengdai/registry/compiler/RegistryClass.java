@@ -101,7 +101,7 @@ final class RegistryClass {
     } else {
       result.addStatement("builder.add($L, $T.class, $T.class)", itemViewClass.getType(),
           ClassName.get(itemViewClass.getBinderType()),
-          ClassName.get(itemViewClass.getViewProviderType()));
+          ClassName.get(itemViewClass.getViewFactoryType()));
     }
   }
 

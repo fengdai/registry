@@ -4,7 +4,7 @@ import android.view.View;
 import com.github.fengdai.registry.Mapper;
 import com.github.fengdai.registry.Registry;
 import com.github.fengdai.registry.ViewBinder;
-import com.github.fengdai.registry.ViewProvider;
+import com.github.fengdai.registry.ViewFactory;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -60,11 +60,11 @@ public abstract class Model<T> {
       return this;
     }
 
-    public <BV extends View, PV extends BV> Builder<T> add(int itemViewType,
+    public <BV extends View, FV extends BV> Builder<T> add(int itemViewType,
         Class<? extends ViewBinder<T, BV>> viewBinderClass,
-        Class<? extends ViewProvider<PV>> viewProviderClass) {
+        Class<? extends ViewFactory<FV>> viewFactoryClass) {
       Registry.ItemView<T, BV> itemView =
-          new IvForViewProvider<>(modelClass, itemViewType, viewBinderClass, viewProviderClass);
+          new IvForViewFactory<>(modelClass, itemViewType, viewBinderClass, viewFactoryClass);
       if (mapperClass == null) {
         this.itemView = itemView;
       } else {

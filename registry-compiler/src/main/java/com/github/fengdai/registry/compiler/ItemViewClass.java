@@ -21,7 +21,7 @@ class ItemViewClass {
     return binderType;
   }
 
-  TypeElement getViewProviderType() {
+  TypeElement getViewFactoryType() {
     return (TypeElement) view;
   }
 
