@@ -5,7 +5,7 @@ import android.view.ViewGroup;
 import com.github.fengdai.registry.Registry;
 import com.github.fengdai.registry.ViewBinder;
 
-abstract class AbsItemView<T, V extends View> implements Registry.ItemView<T, V> {
+abstract class Iv<T, V extends View> implements Registry.ItemView<T, V> {
   private final Class<T> modelClass;
 
   private final int type;
@@ -14,7 +14,7 @@ abstract class AbsItemView<T, V extends View> implements Registry.ItemView<T, V>
 
   private ViewBinder<T, V> viewBinder = null;
 
-  AbsItemView(Class<T> modelClass, int type, Class<? extends ViewBinder<T, V>> viewBinderClass) {
+  Iv(Class<T> modelClass, int type, Class<? extends ViewBinder<T, V>> viewBinderClass) {
     this.modelClass = modelClass;
     this.type = type;
     this.viewBinderClass = viewBinderClass;

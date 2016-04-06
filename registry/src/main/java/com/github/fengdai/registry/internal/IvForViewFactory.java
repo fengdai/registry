@@ -5,7 +5,7 @@ import android.view.ViewGroup;
 import com.github.fengdai.registry.ViewBinder;
 import com.github.fengdai.registry.ViewFactory;
 
-class IvForViewFactory<T, BV extends View, FV extends BV> extends AbsItemView<T, BV> {
+class IvForViewFactory<T, BV extends View, FV extends BV> extends Iv<T, BV> {
   private final Class<? extends ViewFactory<FV>> viewFactoryClass;
   private ViewFactory<FV> viewFactory = null;
 

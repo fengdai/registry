@@ -5,7 +5,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import com.github.fengdai.registry.ViewBinder;
 
-class IvForLayoutRes<T, V extends View> extends AbsItemView<T, V> {
+class IvForLayoutRes<T, V extends View> extends Iv<T, V> {
   private final int layoutRes;
 
   IvForLayoutRes(Class<T> modelClass, int itemViewType,
