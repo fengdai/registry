@@ -17,7 +17,7 @@ public @interface FooBarList {
 ```java
 // For Foo.
 @FooBarList // Indicates it's for FooBarList.
-@Item(layout = R.layout.text_view) // Provides layoutRes for Foo's view.
+@Layout(R.layout.text_view) // Provides layoutRes for Foo's view.
 public class FooBinder implements ViewBinder<Foo, TextView> { // R.layout.text_view is a TextView.
   @Override public void bindView(Foo item, TextView view) {
     // Do binding.
@@ -27,7 +27,7 @@ public class FooBinder implements ViewBinder<Foo, TextView> { // R.layout.text_v
 ```java
 // For Bar.
 @FooBarList
-@item(layout = R.layout.linear_layout)
+@Layout(R.layout.linear_layout)
 public class BarBinder implements ViewBinder<Bar, LinearLayout> { // R.layout.linear_layout is a LinearLayout.
   @Override public void bindView(Bar item, LinearLayout view) {
     // Do binding.

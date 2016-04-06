@@ -34,8 +34,8 @@ import static com.google.auto.common.AnnotationMirrors.getAnnotationValue;
 public class RegistryProcessor extends AbstractProcessor {
   private static final String REGISTRY_CLASS_SUFFIX = "$$Registry";
   private static final String REGISTER_TYPE = "com.github.fengdai.registry.Register";
-  private static final String ITEM_TYPE = "com.github.fengdai.registry.Item";
-  private static final String ITEM_NONE_TYPE = "com.github.fengdai.registry.Item.NONE";
+  private static final String LAYOUT_TYPE = "com.github.fengdai.registry.Layout";
+  private static final String PROVIDER_TYPE = "com.github.fengdai.registry.Provider";
   private static final String MAPPER_TYPE = "com.github.fengdai.registry.Mapper";
   private static final String VIEW_BINDER_TYPE = "com.github.fengdai.registry.ViewBinder";
 
@@ -136,27 +136,20 @@ public class RegistryProcessor extends AbstractProcessor {
   }
 
   private ItemViewClass parseItem(TypeElement binderType, List<Object> viewType) throws Exception {
-    AnnotationMirror item = getAnnotationMirror(binderType, ITEM_TYPE);
-    if (item == null) {
-      error(binderType, "Missing @%s annotation." + ITEM_TYPE);
+    AnnotationMirror layout = getAnnotationMirror(binderType, LAYOUT_TYPE);
+    AnnotationMirror provider = getAnnotationMirror(binderType, PROVIDER_TYPE);
+    Object view = null;
+    if (layout != null) {
+      view = AnnotationMirrors.getAnnotationValue(layout, "value").getValue();
+    } else if (provider != null) {
+      view = ((DeclaredType) AnnotationMirrors.getAnnotationValue(provider, "value")
+          .getValue()).asElement();
+    }
+    if (view == null) {
+      // TODO: 16/3/27 Error message.
+      error(binderType, "Missing @%s or @%s annotation." + LAYOUT_TYPE + PROVIDER_TYPE);
       throw new AssertionError();
     }
-    int layoutRes = (int) AnnotationMirrors.getAnnotationValue(item, "layout").getValue();
-    TypeElement viewProviderType =
-        (TypeElement) ((DeclaredType) AnnotationMirrors.getAnnotationValue(item, "view").getValue())
-            .asElement();
-    boolean specifiedViewProvider =
-        !viewProviderType.getQualifiedName().contentEquals(ITEM_NONE_TYPE);
-    if (layoutRes == -1 && !specifiedViewProvider) {
-      // TODO: 16/3/27 Error message.
-      error(binderType, "");
-      throw new AssertionError();
-    } else if (layoutRes != -1 && specifiedViewProvider) {
-      // TODO: 16/3/27 Error message.
-      error(binderType, "");
-      throw new AssertionError();
-    }
-    Object view = layoutRes != -1 ? layoutRes : viewProviderType;
     if (!viewType.contains(view)) {
       viewType.add(view);
     }
