@@ -37,7 +37,7 @@ public class BarBinder implements ViewBinder<Bar, LinearLayout> { // R.layout.li
 
 3. Create Registry for FooBarList and define the ListView's Adapter.
 ```java
-public class Adapter extends RegisterAdapter {
+public class Adapter extends RegistryAdapter {
   protected Adapter() {
     // Create the Registry.
     super(Registry.create(FooBarList.class));

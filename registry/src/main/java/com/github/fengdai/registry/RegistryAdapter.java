@@ -4,10 +4,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 
-public abstract class RegisterAdapter extends BaseAdapter {
+public abstract class RegistryAdapter extends BaseAdapter {
   private final Registry registry;
 
-  protected RegisterAdapter(Registry registry) {
+  protected RegistryAdapter(Registry registry) {
     this.registry = registry;
   }
 

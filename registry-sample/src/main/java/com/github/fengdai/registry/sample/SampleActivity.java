@@ -4,8 +4,8 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.ListView;
-import com.github.fengdai.registry.RegisterAdapter;
 import com.github.fengdai.registry.Registry;
+import com.github.fengdai.registry.RegistryAdapter;
 import com.github.fengdai.registry.sample.model.Address;
 import com.github.fengdai.registry.sample.model.Card;
 import com.github.fengdai.registry.sample.model.Email;
@@ -30,7 +30,7 @@ public class SampleActivity extends AppCompatActivity {
     adapter.notifyDataSetChanged();
   }
 
-  class Adapter extends RegisterAdapter {
+  class Adapter extends RegistryAdapter {
     protected Adapter() {
       super(Registry.create(SampleList.class));
     }
