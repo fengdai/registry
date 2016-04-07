@@ -5,12 +5,12 @@ import javax.lang.model.element.TypeElement;
 class ItemViewClass {
   private final int type;
   private final TypeElement binderType;
-  private final Object view;
+  private final int layoutRes;
 
-  ItemViewClass(int type, TypeElement binderType, Object view) {
+  ItemViewClass(int type, TypeElement binderType, int layoutRes) {
     this.type = type;
     this.binderType = binderType;
-    this.view = view;
+    this.layoutRes = layoutRes;
   }
 
   int getType() {
@@ -21,15 +21,7 @@ class ItemViewClass {
     return binderType;
   }
 
-  TypeElement getViewFactoryType() {
-    return (TypeElement) view;
-  }
-
   int getLayoutRes() {
-    return (int) view;
-  }
-
-  boolean isViewLayoutRes() {
-    return !(view instanceof TypeElement);
+    return layoutRes;
   }
 }

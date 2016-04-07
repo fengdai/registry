@@ -93,14 +93,8 @@ final class RegistryClass {
   }
 
   private void addItemView(ItemViewClass itemViewClass, MethodSpec.Builder result) {
-    if (itemViewClass.isViewLayoutRes()) {
-      result.addStatement("builder.add($L, new $T(), $L)", itemViewClass.getType(),
-          ClassName.get(itemViewClass.getBinderType()), itemViewClass.getLayoutRes());
-    } else {
-      result.addStatement("builder.add($L, new $T(), new $T())", itemViewClass.getType(),
-          ClassName.get(itemViewClass.getBinderType()),
-          ClassName.get(itemViewClass.getViewFactoryType()));
-    }
+    result.addStatement("builder.add($L, new $T(), $L)", itemViewClass.getType(),
+        ClassName.get(itemViewClass.getBinderType()), itemViewClass.getLayoutRes());
   }
 
   private MethodSpec createModelsMethod() {

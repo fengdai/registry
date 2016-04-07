@@ -34,13 +34,7 @@ public class Builder<T> {
 
   public <V extends View> Builder<T> add(int itemViewType, ViewBinder<T, V> viewBinder,
       int layoutRes) {
-    ViewFactory<V> viewFactory = factory(layoutRes);
-    return add(itemViewType, viewBinder, viewFactory);
-  }
-
-  public <BV extends View, FV extends BV> Builder<T> add(int itemViewType,
-      ViewBinder<T, BV> viewBinder, ViewFactory<FV> viewFactory) {
-    Registry.ItemView<T, BV> itemView = new Iv<>(modelClass, itemViewType, viewBinder, viewFactory);
+    Registry.ItemView<T, V> itemView = new Iv<>(modelClass, itemViewType, viewBinder, layoutRes);
     if (mapper == null) {
       this.itemView = itemView;
     } else {
@@ -58,22 +52,17 @@ public class Builder<T> {
     }
   }
 
-  private static <V extends ViewFactory> V factory(int layoutRes) {
-    // noinspection unchecked
-    return (V) new LayoutViewFactory<>(layoutRes);
-  }
-
   static class Iv<T, BV extends View, FV extends BV> implements Registry.ItemView<T, BV> {
     private final Class<T> modelClass;
     private final int type;
     private final ViewBinder<T, BV> viewBinder;
-    private final ViewFactory<FV> viewFactory;
+    private final int layoutRes;
 
-    Iv(Class<T> modelClass, int type, ViewBinder<T, BV> viewBinder, ViewFactory<FV> viewFactory) {
+    Iv(Class<T> modelClass, int type, ViewBinder<T, BV> viewBinder, int layoutRes) {
       this.modelClass = modelClass;
       this.type = type;
       this.viewBinder = viewBinder;
-      this.viewFactory = viewFactory;
+      this.layoutRes = layoutRes;
     }
 
     public Class<?> getModelClass() {
@@ -85,24 +74,12 @@ public class Builder<T> {
     }
 
     @Override public BV providerView(ViewGroup parent) {
-      return viewFactory.createView(parent);
+      // noinspection unchecked
+      return (BV) LayoutInflater.from(parent.getContext()).inflate(layoutRes, parent, false);
     }
 
     @Override public void bindView(T item, BV convertView) {
       viewBinder.bind(item, convertView);
-    }
-  }
-
-  static class LayoutViewFactory<V extends View> implements ViewFactory<V> {
-    private final int layoutRes;
-
-    LayoutViewFactory(int layoutRes) {
-      this.layoutRes = layoutRes;
-    }
-
-    @Override public V createView(ViewGroup parent) {
-      // noinspection unchecked
-      return (V) LayoutInflater.from(parent.getContext()).inflate(layoutRes, parent, false);
     }
   }
 }
