@@ -26,58 +26,45 @@ public abstract class Model<T> {
   }
 
   public static <T> Builder<T> oneToMany(Class<T> modelClass,
-      Class<? extends Mapper<T, Class<? extends ViewBinder<T, ?>>>> mapperClass) {
-    return new Builder<>(modelClass, mapperClass);
+      Mapper<T, Class<? extends ViewBinder<T, ?>>> mapper) {
+    return new Builder<>(modelClass, mapper);
   }
 
   public static class Builder<T> {
     private final Class<T> modelClass;
-    private final Class<? extends Mapper<T, Class<? extends ViewBinder<T, ?>>>> mapperClass;
+    private final Mapper<T, Class<? extends ViewBinder<T, ?>>> mapper;
     private Map<Class<? extends ViewBinder<T, ?>>, Registry.ItemView<T, ?>> itemViewMap =
         new LinkedHashMap<>();
     private Registry.ItemView<T, ?> itemView;
 
     private Builder(Class<T> modelClass) {
       this.modelClass = modelClass;
-      this.mapperClass = null;
+      this.mapper = null;
     }
 
-    private Builder(Class<T> modelClass,
-        Class<? extends Mapper<T, Class<? extends ViewBinder<T, ?>>>> mapperClass) {
+    private Builder(Class<T> modelClass, Mapper<T, Class<? extends ViewBinder<T, ?>>> mapper) {
       this.modelClass = modelClass;
-      this.mapperClass = mapperClass;
-    }
-
-    public <V extends View> Builder<T> add(int itemViewType,
-        Class<? extends ViewBinder<T, V>> viewBinderClass, final int layoutRes) {
-      Registry.ItemView<T, V> itemView =
-          new IvForLayoutRes<>(modelClass, itemViewType, viewBinderClass, layoutRes);
-      if (mapperClass == null) {
-        this.itemView = itemView;
-      } else {
-        itemViewMap.put(viewBinderClass, itemView);
-      }
-      return this;
+      this.mapper = mapper;
     }
 
     public <BV extends View, FV extends BV> Builder<T> add(int itemViewType,
-        Class<? extends ViewBinder<T, BV>> viewBinderClass,
-        Class<? extends ViewFactory<FV>> viewFactoryClass) {
+        ViewBinder<T, BV> viewBinder, ViewFactory<FV> viewFactory) {
       Registry.ItemView<T, BV> itemView =
-          new IvForViewFactory<>(modelClass, itemViewType, viewBinderClass, viewFactoryClass);
-      if (mapperClass == null) {
+          new Iv<>(modelClass, itemViewType, viewBinder, viewFactory);
+      if (mapper == null) {
         this.itemView = itemView;
       } else {
-        itemViewMap.put(viewBinderClass, itemView);
+        // noinspection unchecked
+        itemViewMap.put((Class<? extends ViewBinder<T, ?>>) viewBinder.getClass(), itemView);
       }
       return this;
     }
 
     public Model<T> build() {
-      if (mapperClass == null) {
+      if (mapper == null) {
         return new ModelToOne<>(modelClass, itemView);
       } else {
-        return new ModelToMany<>(modelClass, mapperClass, itemViewMap);
+        return new ModelToMany<>(modelClass, mapper, itemViewMap);
       }
     }
   }

@@ -20,6 +20,8 @@ final class RegistryClass {
       ClassName.get("com.github.fengdai.registry.internal", "Model");
   private static final ClassName MODEL_BUILDER =
       ClassName.get("com.github.fengdai.registry.internal", "Model", "Builder");
+  private static final ClassName LAYOUTS =
+      ClassName.get("com.github.fengdai.registry.internal", "Layouts");
 
   private final String classPackage;
   private final String className;
@@ -78,7 +80,7 @@ final class RegistryClass {
 
   private MethodSpec createToManyModelMethod(ToManyBinding binding) {
     MethodSpec.Builder result = buildCreateModelMethod(binding);
-    result.addStatement("$T<$T> builder = Model.oneToMany($T.class, $T.class)", MODEL_BUILDER,
+    result.addStatement("$T<$T> builder = Model.oneToMany($T.class, new $T())", MODEL_BUILDER,
         ClassName.get(binding.getModelType()), ClassName.get(binding.getModelType()),
         ClassName.get(binding.getMapperType()));
     for (ItemViewClass itemViewClass : binding.getItemViewClasses()) {
@@ -96,10 +98,10 @@ final class RegistryClass {
 
   private void addItemView(ItemViewClass itemViewClass, MethodSpec.Builder result) {
     if (itemViewClass.isViewLayoutRes()) {
-      result.addStatement("builder.add($L, $T.class, $L)", itemViewClass.getType(),
-          ClassName.get(itemViewClass.getBinderType()), itemViewClass.getLayoutRes());
+      result.addStatement("builder.add($L, new $T(), $T.factoryOf($L))", itemViewClass.getType(),
+          ClassName.get(itemViewClass.getBinderType()), LAYOUTS, itemViewClass.getLayoutRes());
     } else {
-      result.addStatement("builder.add($L, $T.class, $T.class)", itemViewClass.getType(),
+      result.addStatement("builder.add($L, new $T(), new $T())", itemViewClass.getType(),
           ClassName.get(itemViewClass.getBinderType()),
           ClassName.get(itemViewClass.getViewFactoryType()));
     }
