@@ -1,8 +1,8 @@
 package com.github.fengdai.registry.sample;
 
-import com.github.fengdai.registry.internal.Layouts;
-import com.github.fengdai.registry.internal.Model;
-import com.github.fengdai.registry.internal.RegistryImpl;
+import com.github.fengdai.registry.Builder;
+import com.github.fengdai.registry.Model;
+import com.github.fengdai.registry.Registry;
 import com.github.fengdai.registry.sample.binder.BarIconAndText;
 import com.github.fengdai.registry.sample.binder.BarTextOnly;
 import com.github.fengdai.registry.sample.binder.FooBinder;
@@ -11,7 +11,7 @@ import com.github.fengdai.registry.sample.model.Foo;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class TextList$$Registry extends RegistryImpl {
+public class TextList$$Registry extends Registry {
   public TextList$$Registry() {
     super(createModels(), 3);
   }
@@ -24,15 +24,15 @@ public class TextList$$Registry extends RegistryImpl {
   }
 
   private static Model<Foo> com_github_fengdai_registry_internal_model_Foo() {
-    Model.Builder<Foo> builder = Model.oneToOne(Foo.class);
-    builder.add(0, new FooBinder(), Layouts.factoryOf(android.R.layout.simple_list_item_1));
+    Builder<Foo> builder = Builder.oneToOne(Foo.class);
+    builder.add(0, new FooBinder(), android.R.layout.simple_list_item_1);
     return builder.build();
   }
 
   private static Model<Bar> com_github_fengdai_registry_internal_model_Bar() {
-    Model.Builder<Bar> builder = Model.oneToMany(Bar.class, new TextList.BarMapper());
-    builder.add(1, new BarIconAndText(), Layouts.factoryOf(android.R.layout.activity_list_item));
-    builder.add(2, new BarTextOnly(), Layouts.factoryOf(android.R.layout.simple_list_item_1));
+    Builder<Bar> builder = Builder.oneToMany(Bar.class, new TextList.BarMapper());
+    builder.add(1, new BarIconAndText(), android.R.layout.activity_list_item);
+    builder.add(2, new BarTextOnly(), android.R.layout.simple_list_item_1);
     return builder.build();
   }
 }

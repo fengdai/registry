@@ -15,13 +15,9 @@ import javax.lang.model.element.Modifier;
 
 final class RegistryClass {
   private static final ClassName REGISTRY_IMPL =
-      ClassName.get("com.github.fengdai.registry.internal", "RegistryImpl");
-  private static final ClassName MODEL =
-      ClassName.get("com.github.fengdai.registry.internal", "Model");
-  private static final ClassName MODEL_BUILDER =
-      ClassName.get("com.github.fengdai.registry.internal", "Model", "Builder");
-  private static final ClassName LAYOUTS =
-      ClassName.get("com.github.fengdai.registry.internal", "Layouts");
+      ClassName.get("com.github.fengdai.registry", "Registry");
+  private static final ClassName MODEL = ClassName.get("com.github.fengdai.registry", "Model");
+  private static final ClassName BUILDER = ClassName.get("com.github.fengdai.registry", "Builder");
 
   private final String classPackage;
   private final String className;
@@ -70,7 +66,7 @@ final class RegistryClass {
 
   private MethodSpec createToOneModelMethod(ToOneBinding binding) {
     MethodSpec.Builder result = buildCreateModelMethod(binding);
-    result.addStatement("$T<$T> builder = Model.oneToOne($T.class)", MODEL_BUILDER,
+    result.addStatement("$T<$T> builder = Builder.oneToOne($T.class)", BUILDER,
         ClassName.get(binding.getModelType()), ClassName.get(binding.getModelType()));
     ItemViewClass itemViewClass = binding.getItemViewClass();
     addItemView(itemViewClass, result);
@@ -80,7 +76,7 @@ final class RegistryClass {
 
   private MethodSpec createToManyModelMethod(ToManyBinding binding) {
     MethodSpec.Builder result = buildCreateModelMethod(binding);
-    result.addStatement("$T<$T> builder = Model.oneToMany($T.class, new $T())", MODEL_BUILDER,
+    result.addStatement("$T<$T> builder = Builder.oneToMany($T.class, new $T())", BUILDER,
         ClassName.get(binding.getModelType()), ClassName.get(binding.getModelType()),
         ClassName.get(binding.getMapperType()));
     for (ItemViewClass itemViewClass : binding.getItemViewClasses()) {
@@ -98,8 +94,8 @@ final class RegistryClass {
 
   private void addItemView(ItemViewClass itemViewClass, MethodSpec.Builder result) {
     if (itemViewClass.isViewLayoutRes()) {
-      result.addStatement("builder.add($L, new $T(), $T.factoryOf($L))", itemViewClass.getType(),
-          ClassName.get(itemViewClass.getBinderType()), LAYOUTS, itemViewClass.getLayoutRes());
+      result.addStatement("builder.add($L, new $T(), $L)", itemViewClass.getType(),
+          ClassName.get(itemViewClass.getBinderType()), itemViewClass.getLayoutRes());
     } else {
       result.addStatement("builder.add($L, new $T(), new $T())", itemViewClass.getType(),
           ClassName.get(itemViewClass.getBinderType()),
