@@ -9,7 +9,7 @@ import com.github.fengdai.registry.sample.TextList;
 import com.github.fengdai.registry.sample.model.Bar;
 
 @TextList
-@Layout(layout = android.R.layout.activity_list_item)
+@Layout(android.R.layout.activity_list_item)
 public class BarIconAndText implements ViewBinder<Bar, LinearLayout> {
   @Override public void bind(Bar item, LinearLayout view) {
     ((ImageView) view.findViewById(android.R.id.icon)).setImageResource(item.drawableId);

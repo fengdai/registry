@@ -7,7 +7,7 @@ import com.github.fengdai.registry.sample.TextList;
 import com.github.fengdai.registry.sample.model.Foo;
 
 @TextList
-@Layout(layout = android.R.layout.simple_list_item_1)
+@Layout(android.R.layout.simple_list_item_1)
 public class FooBinder implements ViewBinder<Foo, TextView> {
   @Override public void bind(Foo item, TextView view) {
     view.setText(item.text);
