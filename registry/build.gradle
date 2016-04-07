@@ -1,16 +1,17 @@
-apply plugin: 'java'
+apply plugin: 'com.android.library'
 
-targetCompatibility = JavaVersion.VERSION_1_7
-sourceCompatibility = JavaVersion.VERSION_1_7
+android {
+  compileSdkVersion rootProject.ext.compileSdkVersion
+  buildToolsVersion rootProject.ext.buildToolsVersion
 
-configurations {
-  provided
-  compile.extendsFrom provided
+  defaultConfig {
+    minSdkVersion 1
+    versionName VERSION_NAME
+  }
 }
 
 dependencies {
   compile fileTree(dir: 'libs', include: ['*.jar'])
-  provided 'com.google.android:android:2.1.2'
 }
 
 apply from: rootProject.file('gradle/gradle-mvn-push.gradle')
