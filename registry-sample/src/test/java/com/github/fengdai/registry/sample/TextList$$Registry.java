@@ -1,6 +1,5 @@
 package com.github.fengdai.registry.sample;
 
-import com.github.fengdai.registry.Builder;
 import com.github.fengdai.registry.Model;
 import com.github.fengdai.registry.Registry;
 import com.github.fengdai.registry.sample.binder.BarIconAndText;
@@ -24,15 +23,13 @@ public class TextList$$Registry extends Registry {
   }
 
   private static Model<Foo> com_github_fengdai_registry_internal_model_Foo() {
-    Builder<Foo> builder = Builder.oneToOne(Foo.class);
-    builder.add(0, new FooBinder(), android.R.layout.simple_list_item_1);
-    return builder.build();
+    return Model.oneToOne(0, new FooBinder(), android.R.layout.simple_list_item_1);
   }
 
   private static Model<Bar> com_github_fengdai_registry_internal_model_Bar() {
-    Builder<Bar> builder = Builder.oneToMany(Bar.class, new TextList.BarMapper());
-    builder.add(1, new BarIconAndText(), android.R.layout.activity_list_item);
-    builder.add(2, new BarTextOnly(), android.R.layout.simple_list_item_1);
-    return builder.build();
+    return Model.oneToMany(new TextList.BarMapper())
+        .add(BarIconAndText.class, 1, new BarIconAndText(), android.R.layout.activity_list_item)
+        .add(BarTextOnly.class, 2, new BarTextOnly(), android.R.layout.simple_list_item_1)
+        .build();
   }
 }

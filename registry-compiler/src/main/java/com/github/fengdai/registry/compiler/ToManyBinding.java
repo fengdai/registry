@@ -1,25 +1,25 @@
 package com.github.fengdai.registry.compiler;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import javax.lang.model.element.TypeElement;
 
 public class ToManyBinding extends Binding {
   private final TypeElement mapperType;
 
-  private final List<ItemViewClass> itemViewClassList = new LinkedList<>();
+  private final Map<TypeElement, ItemViewClass> itemViewClasses = new LinkedHashMap<>();
 
   ToManyBinding(TypeElement modelType, TypeElement mapperType) {
     super(modelType);
     this.mapperType = mapperType;
   }
 
-  void add(ItemViewClass itemViewClass) {
-    itemViewClassList.add(itemViewClass);
+  void add(TypeElement keyTypeElement, ItemViewClass itemViewClass) {
+    itemViewClasses.put(keyTypeElement, itemViewClass);
   }
 
-  public List<ItemViewClass> getItemViewClasses() {
-    return itemViewClassList;
+  public Map<TypeElement, ItemViewClass> getItemViewClasses() {
+    return itemViewClasses;
   }
 
   TypeElement getMapperType() {

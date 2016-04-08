@@ -120,7 +120,7 @@ public class RegistryProcessor extends AbstractProcessor {
         bindingMap.put(modelType, binding);
       } else {
         ToManyBinding toManyBinding = new ToManyBinding(modelType, mapperType);
-        toManyBinding.add(itemViewClass);
+        toManyBinding.add(binderElement, itemViewClass);
         bindingMap.put(modelType, toManyBinding);
       }
     } else {
@@ -130,7 +130,7 @@ public class RegistryProcessor extends AbstractProcessor {
         return;
       }
       ToManyBinding toManyBinding = (ToManyBinding) binding;
-      toManyBinding.add(itemViewClass);
+      toManyBinding.add(binderElement, itemViewClass);
     }
   }
 

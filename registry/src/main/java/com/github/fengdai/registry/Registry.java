@@ -10,13 +10,13 @@ public abstract class Registry {
   private final Map<Class<?>, Model<?>> models;
   private final int viewTypeCount;
 
-  public interface ItemView<T, V extends View> {
+  public interface ItemView {
 
     int getType();
 
-    V providerView(ViewGroup parent);
+    View newView(ViewGroup parent);
 
-    void bindView(T item, V convertView);
+    void bindView(Object item, View convertView);
   }
 
   public static Registry create(Class<? extends Annotation> cls) {
@@ -35,13 +35,13 @@ public abstract class Registry {
     this.viewTypeCount = viewTypeCount;
   }
 
-  public ItemView<Object, View> getItemView(Object item) {
+  public ItemView getItemView(Object item) {
     Model model = findModelFor(item);
     if (model == null) {
       throw new IllegalStateException("Unregistered type: " + item.getClass().getName());
     }
     // noinspection unchecked
-    ItemView<Object, View> itemView = model.getItemView(item);
+    ItemView itemView = model.getItemView(item);
     if (itemView == null) {
       // TODO message
       throw new IllegalStateException("");
@@ -57,7 +57,7 @@ public abstract class Registry {
     return findItemViewFor(item) != null;
   }
 
-  private <T> ItemView<T, ?> findItemViewFor(T item) {
+  private <T> ItemView findItemViewFor(T item) {
     Model<T> model = findModelFor(item);
     return model != null ? model.getItemView(item) : null;
   }

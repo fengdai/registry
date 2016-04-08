@@ -13,9 +13,9 @@ public abstract class RegistryAdapter extends BaseAdapter {
 
   @Override public View getView(int position, View convertView, ViewGroup parent) {
     Object item = getItem(position);
-    Registry.ItemView<Object, View> itemView = registry.getItemView(item);
+    Registry.ItemView itemView = registry.getItemView(item);
     if (convertView == null) {
-      convertView = itemView.providerView(parent);
+      convertView = itemView.newView(parent);
     }
     itemView.bindView(item, convertView);
     return convertView;
