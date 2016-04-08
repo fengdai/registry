@@ -1,6 +1,6 @@
 package com.github.fengdai.registry;
 
-public interface Mapper<T, E extends Class<? extends ViewBinder<T, ?>>> {
+interface Mapper<T, K> {
 
-  E map(T model);
+  K map(T model);
 }

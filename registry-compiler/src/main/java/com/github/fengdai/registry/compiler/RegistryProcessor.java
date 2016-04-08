@@ -35,7 +35,7 @@ public class RegistryProcessor extends AbstractProcessor {
   private static final String REGISTRY_CLASS_SUFFIX = "$$Registry";
   private static final String REGISTER_TYPE = "com.github.fengdai.registry.Register";
   private static final String LAYOUT_TYPE = "com.github.fengdai.registry.Layout";
-  private static final String MAPPER_TYPE = "com.github.fengdai.registry.Mapper";
+  private static final String MAPPER_TYPE = "com.github.fengdai.registry.BinderMapper";
   private static final String VIEW_BINDER_TYPE = "com.github.fengdai.registry.ViewBinder";
 
   private Elements elementUtils;

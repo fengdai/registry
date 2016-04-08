@@ -20,12 +20,11 @@ public abstract class Model<T> {
 
   abstract Registry.ItemView getItemView(T item);
 
-  static class ModelToMany<T, K extends Class<? extends ViewBinder<T, ?>>> extends Model<T> {
+  static class ModelToMany<T, K> extends Model<T> {
     private Mapper<T, K> mapper = null;
-    private final Map<Class<? extends ViewBinder<T, ?>>, Registry.ItemView> itemMap;
+    private final Map<K, Registry.ItemView> itemMap;
 
-    ModelToMany(Mapper<T, K> mapper,
-        Map<Class<? extends ViewBinder<T, ?>>, Registry.ItemView> itemMap) {
+    ModelToMany(Mapper<T, K> mapper, Map<K, Registry.ItemView> itemMap) {
       this.mapper = mapper;
       this.itemMap = itemMap;
     }
@@ -72,10 +71,9 @@ public abstract class Model<T> {
     }
   }
 
-  public static class Builder<T, K extends Class<? extends ViewBinder<T, ?>>> {
+  public static class Builder<T, K> {
     private final Mapper<T, K> mapper;
-    private Map<Class<? extends ViewBinder<T, ?>>, Registry.ItemView> itemViewMap =
-        new LinkedHashMap<>();
+    private Map<K, Registry.ItemView> itemViewMap = new LinkedHashMap<>();
 
     Builder(Mapper<T, K> mapper) {
       this.mapper = mapper;
