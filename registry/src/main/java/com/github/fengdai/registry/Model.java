@@ -8,7 +8,7 @@ import java.util.Map;
 
 public abstract class Model<T> {
 
-  public static <T, V extends View> Model<T> oneToOne(int itemViewType, ViewBinder<T, V> viewBinder,
+  public static <T, V> Model<T> oneToOne(int itemViewType, ViewBinder<T, V> viewBinder,
       int layoutRes) {
     return new ModelToOne<>(new Iv<>(itemViewType, viewBinder, layoutRes));
   }
@@ -46,7 +46,7 @@ public abstract class Model<T> {
     }
   }
 
-  static class Iv<T, V extends View> implements Registry.ItemView {
+  static class Iv<T, V> implements Registry.ItemView {
     private final int type;
     private final ViewBinder<T, V> viewBinder;
     private final int layoutRes;
@@ -79,7 +79,7 @@ public abstract class Model<T> {
       this.mapper = mapper;
     }
 
-    public <V extends View> Builder<T, K> add(K key, int itemViewType, ViewBinder<T, V> viewBinder,
+    public <V> Builder<T, K> add(K key, int itemViewType, ViewBinder<T, V> viewBinder,
         int layoutRes) {
       Registry.ItemView itemView = new Iv<>(itemViewType, viewBinder, layoutRes);
       itemViewMap.put(key, itemView);

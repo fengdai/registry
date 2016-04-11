@@ -1,8 +1,6 @@
 package com.github.fengdai.registry;
 
-import android.view.View;
-
-public interface ViewBinder<T, V extends View> {
+public interface ViewBinder<T, V> {
 
   void bind(T item, V view);
 }
