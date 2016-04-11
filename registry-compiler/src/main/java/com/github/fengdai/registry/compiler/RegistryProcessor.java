@@ -83,12 +83,12 @@ public class RegistryProcessor extends AbstractProcessor {
       // Find all Mappers.
       Map<TypeElement, TypeElement> mapperMap = findAllMappers(annotationElement);
       Map<TypeElement, Binding> bindingMap = new LinkedHashMap<>();
-      List<Object> viewType = new LinkedList<>();
+      List<Integer> viewTypes = new LinkedList<>();
       Set<? extends Element> binderElements = env.getElementsAnnotatedWith(annotationElement);
       for (Element binderElement : binderElements) {
-        parseBinder((TypeElement) binderElement, bindingMap, mapperMap, viewType);
+        parseBinder((TypeElement) binderElement, bindingMap, mapperMap, viewTypes);
       }
-      RegistryClass registryClass = createRegistryClass(annotationElement, viewType.size());
+      RegistryClass registryClass = createRegistryClass(annotationElement, viewTypes.size());
       for (Map.Entry<TypeElement, Binding> entry : bindingMap.entrySet()) {
         registryClass.addBinding(entry.getValue());
       }
@@ -104,10 +104,10 @@ public class RegistryProcessor extends AbstractProcessor {
   }
 
   private void parseBinder(TypeElement binderElement, Map<TypeElement, Binding> bindingMap,
-      Map<TypeElement, TypeElement> mapperMap, List<Object> viewType) {
+      Map<TypeElement, TypeElement> mapperMap, List<Integer> viewTypes) {
     ItemViewClass itemViewClass;
     try {
-      itemViewClass = parseItem(binderElement, viewType);
+      itemViewClass = parseItem(binderElement, viewTypes);
     } catch (Exception e) {
       return;
     }
@@ -134,7 +134,8 @@ public class RegistryProcessor extends AbstractProcessor {
     }
   }
 
-  private ItemViewClass parseItem(TypeElement binderType, List<Object> viewType) throws Exception {
+  private ItemViewClass parseItem(TypeElement binderType, List<Integer> viewTypes)
+      throws Exception {
     AnnotationMirror layout = getAnnotationMirror(binderType, LAYOUT_TYPE);
     if (layout == null) {
       // TODO: 16/3/27 Error message.
@@ -142,10 +143,10 @@ public class RegistryProcessor extends AbstractProcessor {
       throw new AssertionError();
     }
     int layoutRes = (int) AnnotationMirrors.getAnnotationValue(layout, "value").getValue();
-    if (!viewType.contains(layoutRes)) {
-      viewType.add(layoutRes);
+    if (!viewTypes.contains(layoutRes)) {
+      viewTypes.add(layoutRes);
     }
-    return new ItemViewClass(viewType.indexOf(layoutRes), binderType, layoutRes);
+    return new ItemViewClass(viewTypes.indexOf(layoutRes), binderType, layoutRes);
   }
 
   private Map<TypeElement, TypeElement> findAllMappers(Element annotationElement) {
