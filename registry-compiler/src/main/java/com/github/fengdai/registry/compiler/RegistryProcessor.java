@@ -24,10 +24,10 @@ import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 
+import static com.github.fengdai.registry.compiler.Utils.inferInterfaceTypeArgument;
 import static com.google.auto.common.AnnotationMirrors.getAnnotationValue;
 
 @AutoService(Processor.class)
@@ -35,7 +35,7 @@ public class RegistryProcessor extends AbstractProcessor {
   private static final String REGISTRY_CLASS_SUFFIX = "$$Registry";
   private static final String REGISTER_TYPE = "com.github.fengdai.registry.Register";
   private static final String LAYOUT_TYPE = "com.github.fengdai.registry.Layout";
-  private static final String MAPPER_TYPE = "com.github.fengdai.registry.BinderMapper";
+  private static final String MAPPER_TYPE = "com.github.fengdai.registry.Mapper";
   private static final String VIEW_BINDER_TYPE = "com.github.fengdai.registry.ViewBinder";
 
   private Elements elementUtils;
@@ -111,7 +111,7 @@ public class RegistryProcessor extends AbstractProcessor {
     } catch (Exception e) {
       return;
     }
-    TypeElement modelType = getInterfaceTypeArgument(binderElement, VIEW_BINDER_TYPE, 0);
+    TypeElement modelType = inferInterfaceTypeArgument(binderElement, VIEW_BINDER_TYPE, 0);
     Binding binding = bindingMap.get(modelType);
     if (binding == null) {
       TypeElement mapperType = mapperMap.get(modelType);
@@ -155,7 +155,7 @@ public class RegistryProcessor extends AbstractProcessor {
     List<TypeElement> mappers = getAnnotationElements(register, "mappers");
     for (TypeElement mapper : mappers) {
       if (isValid(mapper)) {
-        TypeElement modelType = getInterfaceTypeArgument(mapper, MAPPER_TYPE, 0);
+        TypeElement modelType = inferInterfaceTypeArgument(mapper, MAPPER_TYPE, 0);
         if (mapperMap.get(modelType) != null) {
           // TODO: 16/3/27 Error message.
           error(annotationElement, "Conflict: ");
@@ -176,18 +176,6 @@ public class RegistryProcessor extends AbstractProcessor {
   private boolean isValid(TypeElement mapper) {
     // TODO: 16/3/27
     return true;
-  }
-
-  static TypeElement getInterfaceTypeArgument(TypeElement element, String interfaceClassName,
-      int typeArgumentIndex) {
-    for (TypeMirror mirror : element.getInterfaces()) {
-      DeclaredType type = (DeclaredType) mirror;
-      if (((TypeElement) type.asElement()).getQualifiedName().contentEquals(interfaceClassName)) {
-        return (TypeElement) ((DeclaredType) type.getTypeArguments()
-            .get(typeArgumentIndex)).asElement();
-      }
-    }
-    throw new AssertionError();
   }
 
   static ImmutableList<TypeElement> getAnnotationElements(AnnotationMirror annotationMirror,
