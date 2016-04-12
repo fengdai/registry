@@ -13,14 +13,14 @@ public class Utils {
     throw new AssertionError();
   }
 
-  static TypeElement inferInterfaceTypeArgument(TypeElement element, String interfaceClassName,
+  static TypeElement inferSuperTypeArgument(TypeElement element, String superClassName,
       int typeArgumentIndex) {
-    return infer(new LinkedList<DeclaredType>(), 0, element.asType(), interfaceClassName,
+    return infer(new LinkedList<DeclaredType>(), 0, element.asType(), superClassName,
         typeArgumentIndex);
   }
 
   private static TypeElement infer(List<DeclaredType> hierarchy, int deep, TypeMirror type,
-      String interfaceClassName, int typeArgumentIndex) {
+      String superClassName, int typeArgumentIndex) {
     DeclaredType declaredType = (DeclaredType) type;
     TypeElement typeElement = (TypeElement) declaredType.asElement();
     if (hierarchy.size() > deep + 1) {
@@ -31,20 +31,19 @@ public class Utils {
     } else if (hierarchy.size() == deep) {
       hierarchy.add(declaredType);
     }
-    if (declaredType.asElement().toString().contentEquals(interfaceClassName)) {
+    if (typeElement.toString().contentEquals(superClassName)) {
       // Found. Try to infer.
       return analyseHierarchy(hierarchy, typeArgumentIndex);
     } else {
       // Not found. Search implemented interfaces and super class.
-      for (TypeMirror superType : typeElement.getInterfaces()) {
-        TypeElement typeArgument =
-            infer(hierarchy, deep + 1, superType, interfaceClassName, typeArgumentIndex);
-        if (typeArgument != null) return typeArgument;
+      List<TypeMirror> superTypes = new LinkedList<>(typeElement.getInterfaces());
+      TypeMirror superClassType = typeElement.getSuperclass();
+      if (superClassType.getKind() == TypeKind.DECLARED) {
+        superTypes.add(superClassType);
       }
-      TypeMirror superType = typeElement.getSuperclass();
-      if (superType.getKind() == TypeKind.DECLARED) {
+      for (TypeMirror superType : superTypes) {
         TypeElement typeArgument =
-            infer(hierarchy, deep + 1, superType, interfaceClassName, typeArgumentIndex);
+            infer(hierarchy, deep + 1, superType, superClassName, typeArgumentIndex);
         if (typeArgument != null) return typeArgument;
       }
     }

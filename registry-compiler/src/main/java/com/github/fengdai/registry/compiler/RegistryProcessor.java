@@ -27,7 +27,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 
-import static com.github.fengdai.registry.compiler.Utils.inferInterfaceTypeArgument;
+import static com.github.fengdai.registry.compiler.Utils.inferSuperTypeArgument;
 import static com.google.auto.common.AnnotationMirrors.getAnnotationValue;
 
 @AutoService(Processor.class)
@@ -111,7 +111,7 @@ public class RegistryProcessor extends AbstractProcessor {
     } catch (Exception e) {
       return;
     }
-    TypeElement modelType = inferInterfaceTypeArgument(binderElement, VIEW_BINDER_TYPE, 0);
+    TypeElement modelType = inferSuperTypeArgument(binderElement, VIEW_BINDER_TYPE, 0);
     Binding binding = bindingMap.get(modelType);
     if (binding == null) {
       TypeElement mapperType = mapperMap.get(modelType);
@@ -155,7 +155,7 @@ public class RegistryProcessor extends AbstractProcessor {
     List<TypeElement> mappers = getAnnotationElements(register, "mappers");
     for (TypeElement mapper : mappers) {
       if (isValid(mapper)) {
-        TypeElement modelType = inferInterfaceTypeArgument(mapper, MAPPER_TYPE, 0);
+        TypeElement modelType = inferSuperTypeArgument(mapper, MAPPER_TYPE, 0);
         if (mapperMap.get(modelType) != null) {
           // TODO: 16/3/27 Error message.
           error(annotationElement, "Conflict: ");
