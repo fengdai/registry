@@ -1,11 +1,11 @@
 package com.github.fengdai.registry.compiler;
 
-import com.google.auto.common.AnnotationMirrors;
 import com.google.auto.common.MoreElements;
 import com.google.auto.service.AutoService;
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.squareup.javapoet.TypeName;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -24,11 +24,13 @@ import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
-import javax.tools.Diagnostic;
+import javax.lang.model.util.Types;
 
 import static com.github.fengdai.registry.compiler.Utils.inferSuperTypeArgument;
 import static com.google.auto.common.AnnotationMirrors.getAnnotationValue;
+import static javax.tools.Diagnostic.Kind.ERROR;
 
 @AutoService(Processor.class)
 public class RegistryProcessor extends AbstractProcessor {
@@ -39,11 +41,13 @@ public class RegistryProcessor extends AbstractProcessor {
   private static final String VIEW_BINDER_TYPE = "com.github.fengdai.registry.ViewBinder";
 
   private Elements elementUtils;
+  private Types typesUtils;
   private Filer filer;
 
   @Override public synchronized void init(ProcessingEnvironment env) {
     super.init(env);
     elementUtils = env.getElementUtils();
+    typesUtils = env.getTypeUtils();
     filer = env.getFiler();
   }
 
@@ -80,16 +84,16 @@ public class RegistryProcessor extends AbstractProcessor {
     Map<TypeElement, RegistryClass> registryClassMap = new LinkedHashMap<>();
     for (Element element : env.getElementsAnnotatedWith(register)) {
       TypeElement annotationElement = (TypeElement) element;
+      Map<TypeMirror, Binding> bindings = new LinkedHashMap<>();
       // Find all Mappers.
-      Map<TypeElement, TypeElement> mapperMap = findAllMappers(annotationElement);
-      Map<TypeElement, Binding> bindingMap = new LinkedHashMap<>();
+      Map<TypeMirror, TypeMirror> mapperMap = findAllMappers(annotationElement);
       List<Integer> viewTypes = new LinkedList<>();
       Set<? extends Element> binderElements = env.getElementsAnnotatedWith(annotationElement);
       for (Element binderElement : binderElements) {
-        parseBinder((TypeElement) binderElement, bindingMap, mapperMap, viewTypes);
+        parseBinder((TypeElement) binderElement, bindings, mapperMap, viewTypes);
       }
       RegistryClass registryClass = createRegistryClass(annotationElement, viewTypes.size());
-      for (Map.Entry<TypeElement, Binding> entry : bindingMap.entrySet()) {
+      for (Map.Entry<TypeMirror, Binding> entry : bindings.entrySet()) {
         registryClass.addBinding(entry.getValue());
       }
       registryClassMap.put(annotationElement, registryClass);
@@ -103,65 +107,69 @@ public class RegistryProcessor extends AbstractProcessor {
     return new RegistryClass(packageName, className, viewTypeCount);
   }
 
-  private void parseBinder(TypeElement binderElement, Map<TypeElement, Binding> bindingMap,
-      Map<TypeElement, TypeElement> mapperMap, List<Integer> viewTypes) {
+  private void parseBinder(TypeElement binderElement, Map<TypeMirror, Binding> bindingMap,
+      Map<TypeMirror, TypeMirror> mapperMap, List<Integer> viewTypes) {
     ItemViewClass itemViewClass;
     try {
-      itemViewClass = parseItem(binderElement, viewTypes);
+      itemViewClass = createItemViewClass(binderElement, viewTypes);
     } catch (Exception e) {
+      error(binderElement, e.getMessage());
       return;
     }
-    TypeElement modelType = inferSuperTypeArgument(binderElement, VIEW_BINDER_TYPE, 0);
+    TypeMirror modelType =
+        typesUtils.erasure(inferSuperTypeArgument(binderElement, VIEW_BINDER_TYPE, 0));
     Binding binding = bindingMap.get(modelType);
     if (binding == null) {
-      TypeElement mapperType = mapperMap.get(modelType);
+      TypeMirror mapperType = mapperMap.get(modelType);
       if (mapperType == null) {
-        binding = new ToOneBinding(modelType, itemViewClass);
+        binding = new ToOneBinding(TypeName.get(modelType), itemViewClass);
         bindingMap.put(modelType, binding);
       } else {
-        ToManyBinding toManyBinding = new ToManyBinding(modelType, mapperType);
-        toManyBinding.add(binderElement, itemViewClass);
+        ToManyBinding toManyBinding =
+            new ToManyBinding(TypeName.get(modelType), TypeName.get(mapperType));
+        toManyBinding.add(binderElement.asType(), itemViewClass);
         bindingMap.put(modelType, toManyBinding);
       }
     } else {
       if (binding instanceof ToOneBinding) {
-        // TODO: 16/3/27 Error message.
-        error(binderElement, "");
+        error(binderElement,
+            "More than one ViewBinder is defined for %s. You need to define a BinderMapper for them.\nConflicts with %s",
+            modelType, ((ToOneBinding) binding).getItemViewClass().getBinderType());
         return;
       }
       ToManyBinding toManyBinding = (ToManyBinding) binding;
-      toManyBinding.add(binderElement, itemViewClass);
+      toManyBinding.add(binderElement.asType(), itemViewClass);
     }
   }
 
-  private ItemViewClass parseItem(TypeElement binderType, List<Integer> viewTypes)
+  private ItemViewClass createItemViewClass(TypeElement binderElement, List<Integer> viewTypes)
       throws Exception {
-    AnnotationMirror layout = getAnnotationMirror(binderType, LAYOUT_TYPE);
+    AnnotationMirror layout = getAnnotationMirror(binderElement, LAYOUT_TYPE);
     if (layout == null) {
-      // TODO: 16/3/27 Error message.
-      error(binderType, "Missing @%s annotation." + LAYOUT_TYPE);
-      throw new AssertionError();
+      throw new IllegalStateException(String.format("Missing @%s annotation.", LAYOUT_TYPE));
     }
-    int layoutRes = (int) AnnotationMirrors.getAnnotationValue(layout, "value").getValue();
+    int layoutRes = (int) getAnnotationValue(layout, "value").getValue();
     if (!viewTypes.contains(layoutRes)) {
       viewTypes.add(layoutRes);
     }
-    return new ItemViewClass(viewTypes.indexOf(layoutRes), binderType, layoutRes);
+    return new ItemViewClass(viewTypes.indexOf(layoutRes), TypeName.get(binderElement.asType()),
+        layoutRes);
   }
 
-  private Map<TypeElement, TypeElement> findAllMappers(Element annotationElement) {
-    Map<TypeElement, TypeElement> mapperMap = new LinkedHashMap<>();
+  private Map<TypeMirror, TypeMirror> findAllMappers(Element annotationElement) {
+    Map<TypeMirror, TypeMirror> mapperMap = new LinkedHashMap<>();
     AnnotationMirror register = getAnnotationMirror(annotationElement, REGISTER_TYPE);
-    List<TypeElement> mappers = getAnnotationElements(register, "mappers");
-    for (TypeElement mapper : mappers) {
-      if (isValid(mapper)) {
-        TypeElement modelType = inferSuperTypeArgument(mapper, MAPPER_TYPE, 0);
-        if (mapperMap.get(modelType) != null) {
-          // TODO: 16/3/27 Error message.
-          error(annotationElement, "Conflict: ");
-        }
-        mapperMap.put(modelType, mapper);
+    List<TypeMirror> mappers = getAnnotationElements(register, "mappers");
+    for (TypeMirror mapperType : mappers) {
+      TypeElement mapperElement = (TypeElement) ((DeclaredType) mapperType).asElement();
+      TypeMirror modelType =
+          typesUtils.erasure(inferSuperTypeArgument(mapperElement, MAPPER_TYPE, 0));
+      TypeMirror existMapper = mapperMap.get(modelType);
+      if (existMapper != null) {
+        error(mapperElement, "Duplicated BinderMapper: %s is already defined for %s.", existMapper,
+            modelType);
       }
+      mapperMap.put(modelType, mapperType);
     }
     return mapperMap;
   }
@@ -170,23 +178,18 @@ public class RegistryProcessor extends AbstractProcessor {
     if (args.length > 0) {
       message = String.format(message, args);
     }
-    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, element);
+    processingEnv.getMessager().printMessage(ERROR, message, element);
   }
 
-  private boolean isValid(TypeElement mapper) {
-    // TODO: 16/3/27
-    return true;
-  }
-
-  static ImmutableList<TypeElement> getAnnotationElements(AnnotationMirror annotationMirror,
+  static ImmutableList<TypeMirror> getAnnotationElements(AnnotationMirror annotationMirror,
       final String elementName) {
-    // noinspection unchecked That's the whole point of this method
+    // noinspection unchecked
     List<? extends AnnotationValue> listValue =
         (List<? extends AnnotationValue>) getAnnotationValue(annotationMirror,
             elementName).getValue();
-    return FluentIterable.from(listValue).transform(new Function<AnnotationValue, TypeElement>() {
-      @Override public TypeElement apply(AnnotationValue typeValue) {
-        return (TypeElement) ((DeclaredType) typeValue.getValue()).asElement();
+    return FluentIterable.from(listValue).transform(new Function<AnnotationValue, TypeMirror>() {
+      @Override public TypeMirror apply(AnnotationValue typeValue) {
+        return (TypeMirror) typeValue.getValue();
       }
     }).toList();
   }

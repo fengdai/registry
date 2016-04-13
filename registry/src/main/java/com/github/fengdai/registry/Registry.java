@@ -41,12 +41,7 @@ public abstract class Registry {
       throw new IllegalStateException("Unregistered type: " + item.getClass().getName());
     }
     // noinspection unchecked
-    ItemView itemView = model.getItemView(item);
-    if (itemView == null) {
-      // TODO message
-      throw new IllegalStateException("");
-    }
-    return itemView;
+    return model.getItemView(item);
   }
 
   public int getViewTypeCount() {

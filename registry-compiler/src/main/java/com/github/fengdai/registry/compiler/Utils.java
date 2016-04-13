@@ -13,13 +13,13 @@ public class Utils {
     throw new AssertionError();
   }
 
-  static TypeElement inferSuperTypeArgument(TypeElement element, String superClassName,
+  static TypeMirror inferSuperTypeArgument(TypeElement element, String superClassName,
       int typeArgumentIndex) {
     return infer(new LinkedList<DeclaredType>(), 0, element.asType(), superClassName,
         typeArgumentIndex);
   }
 
-  private static TypeElement infer(List<DeclaredType> hierarchy, int deep, TypeMirror type,
+  private static TypeMirror infer(List<DeclaredType> hierarchy, int deep, TypeMirror type,
       String superClassName, int typeArgumentIndex) {
     DeclaredType declaredType = (DeclaredType) type;
     TypeElement typeElement = (TypeElement) declaredType.asElement();
@@ -42,7 +42,7 @@ public class Utils {
         superTypes.add(superClassType);
       }
       for (TypeMirror superType : superTypes) {
-        TypeElement typeArgument =
+        TypeMirror typeArgument =
             infer(hierarchy, deep + 1, superType, superClassName, typeArgumentIndex);
         if (typeArgument != null) return typeArgument;
       }
@@ -50,11 +50,11 @@ public class Utils {
     return null;
   }
 
-  private static TypeElement analyseHierarchy(List<DeclaredType> hierarchy, int typeArgumentIndex) {
+  private static TypeMirror analyseHierarchy(List<DeclaredType> hierarchy, int typeArgumentIndex) {
     DeclaredType declaredType = hierarchy.remove(hierarchy.size() - 1);
     TypeMirror typeArgument = declaredType.getTypeArguments().get(typeArgumentIndex);
     if (typeArgument.getKind() == TypeKind.DECLARED) {
-      return (TypeElement) ((DeclaredType) typeArgument).asElement();
+      return typeArgument;
     } else {
       declaredType = hierarchy.get(hierarchy.size() - 1);
       TypeElement element = (TypeElement) declaredType.asElement();

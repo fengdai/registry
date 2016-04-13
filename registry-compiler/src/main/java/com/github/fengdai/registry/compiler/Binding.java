@@ -1,15 +1,15 @@
 package com.github.fengdai.registry.compiler;
 
-import javax.lang.model.element.TypeElement;
+import com.squareup.javapoet.TypeName;
 
 class Binding {
-  private final TypeElement modelType;
+  private final TypeName modelType;
 
-  Binding(TypeElement modelType) {
+  Binding(TypeName modelType) {
     this.modelType = modelType;
   }
 
-  TypeElement getModelType() {
+  TypeName getModelType() {
     return modelType;
   }
 }

@@ -13,7 +13,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
 
 final class RegistryClass {
   private static final ClassName REGISTRY_IMPL =
@@ -69,19 +69,19 @@ final class RegistryClass {
     MethodSpec.Builder result = buildCreateModelMethod(binding);
     ItemViewClass itemViewClass = binding.getItemViewClass();
     result.addStatement("return Model.oneToOne($L, new $T(), $L)", itemViewClass.getType(),
-        ClassName.get(itemViewClass.getBinderType()), itemViewClass.getLayoutRes());
+        itemViewClass.getBinderType(), itemViewClass.getLayoutRes());
     return result.build();
   }
 
   private MethodSpec createToManyModelMethod(ToManyBinding binding) {
     MethodSpec.Builder result = buildCreateModelMethod(binding);
     CodeBlock.Builder cbb = CodeBlock.builder();
-    cbb.add("return Model.oneToMany(new $T())\n", ClassName.get(binding.getMapperType()));
-    for (Map.Entry<TypeElement, ItemViewClass> entry : binding.getItemViewClasses().entrySet()) {
-      TypeElement key = entry.getKey();
+    cbb.add("return Model.oneToMany(new $T())\n", binding.getMapperType());
+    for (Map.Entry<TypeMirror, ItemViewClass> entry : binding.getItemViewClasses().entrySet()) {
+      TypeMirror key = entry.getKey();
       ItemViewClass itemViewClass = entry.getValue();
-      cbb.add("    .add($T.class, $L, new $T(), $L)\n", ClassName.get(key), itemViewClass.getType(),
-          ClassName.get(itemViewClass.getBinderType()), itemViewClass.getLayoutRes());
+      cbb.add("    .add($T.class, $L, new $T(), $L)\n", TypeName.get(key), itemViewClass.getType(),
+          itemViewClass.getBinderType(), itemViewClass.getLayoutRes());
     }
     cbb.add("    .build();\n");
     result.addCode(cbb.build());
@@ -91,7 +91,7 @@ final class RegistryClass {
   private static MethodSpec.Builder buildCreateModelMethod(Binding binding) {
     return MethodSpec.methodBuilder(createModelMethodName(binding))
         .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
-        .returns(ParameterizedTypeName.get(MODEL, ClassName.get(binding.getModelType())));
+        .returns(ParameterizedTypeName.get(MODEL, binding.getModelType()));
   }
 
   private MethodSpec createModelsMethod() {
@@ -103,7 +103,7 @@ final class RegistryClass {
                 ParameterizedTypeName.get(MODEL, WildcardTypeName.subtypeOf(TypeName.OBJECT))));
     result.addStatement("Map<Class<?>, Model<?>> map = new $T<>()", LinkedHashMap.class);
     for (Binding binding : bindings) {
-      result.addStatement("map.put($T.class, $L())", ClassName.get(binding.getModelType()),
+      result.addStatement("map.put($T.class, $L())", binding.getModelType(),
           createModelMethodName(binding));
     }
     result.addStatement("return map");
@@ -111,6 +111,6 @@ final class RegistryClass {
   }
 
   private static String createModelMethodName(Binding binding) {
-    return binding.getModelType().getQualifiedName().toString().replace('.', '_');
+    return binding.getModelType().toString().replace('.', '_');
   }
 }

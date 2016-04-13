@@ -30,7 +30,13 @@ public abstract class Model<T> {
     }
 
     @Override Registry.ItemView getItemView(T item) {
-      return itemMap.get(mapper.map(item));
+      K key = mapper.map(item);
+      if (key == null) {
+        throw new IllegalStateException(
+            String.format("BinderMapper{%s}: Can't map key for item{%s}.",
+                mapper.getClass().getName(), item));
+      }
+      return itemMap.get(key);
     }
   }
 

@@ -1,13 +1,13 @@
 package com.github.fengdai.registry.compiler;
 
-import javax.lang.model.element.TypeElement;
+import com.squareup.javapoet.TypeName;
 
 class ItemViewClass {
   private final int type;
-  private final TypeElement binderType;
+  private final TypeName binderType;
   private final int layoutRes;
 
-  ItemViewClass(int type, TypeElement binderType, int layoutRes) {
+  ItemViewClass(int type, TypeName binderType, int layoutRes) {
     this.type = type;
     this.binderType = binderType;
     this.layoutRes = layoutRes;
@@ -17,7 +17,7 @@ class ItemViewClass {
     return type;
   }
 
-  TypeElement getBinderType() {
+  TypeName getBinderType() {
     return binderType;
   }
 
