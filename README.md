@@ -1,8 +1,8 @@
-#Registry
+# Registry
 
 Registry provides a mechanism for mapping ListView's items to their itemViews. It can generate static code about the item-to-itemView relationship. You'll never care about the item-view-type and view-type-count anymore. They can be counting by Registry automatically.
 
-#How to use
+# How to use
 
 Say, we have a multi-view-type ListView which displays two kind of item: Foo and Bar.
 
@@ -48,7 +48,7 @@ public class Adapter extends RegistryAdapter {
 
 Done.:tada:
 
-#Download
+# Download
 
 Gradle:
 ```groovy
@@ -73,7 +73,7 @@ dependencies {
 }
 ```
 
-#License
+# License
 
     Copyright (C) 2016 Feng Dai
 
