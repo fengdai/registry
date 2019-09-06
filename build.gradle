@@ -1,10 +1,10 @@
 buildscript {
   repositories {
+    google()
     jcenter()
   }
   dependencies {
-    classpath 'com.android.tools.build:gradle:1.5.0'
-    classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
+    classpath 'com.android.tools.build:gradle:3.5.0'
   }
 }
 
@@ -13,6 +13,7 @@ allprojects {
   version = VERSION_NAME
 
   repositories {
+    google()
     jcenter()
   }
 }
@@ -22,10 +23,9 @@ task clean(type: Delete) {
 }
 
 ext {
-  minSdkVersion = 7
-  targetSdkVersion = 23
-  compileSdkVersion = 23
-  buildToolsVersion = '23.0.1'
+  minSdkVersion = 14
+  targetSdkVersion = 28
+  compileSdkVersion = 28
   sourceCompatibilityVersion = JavaVersion.VERSION_1_7
   targetCompatibilityVersion = JavaVersion.VERSION_1_7
 }

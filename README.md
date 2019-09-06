@@ -52,12 +52,6 @@ Done.:tada:
 
 Gradle:
 ```groovy
-buildscript {
-  dependencies {
-    classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
-  }
-}
-
 allprojects {
   repositories {
     maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
@@ -65,11 +59,9 @@ allprojects {
 }
 ```
 ```groovy
-apply plugin: 'com.neenbedankt.android-apt'
-
 dependencies {
-  compile 'com.github.fengdai:registry:1.0.0-SNAPSHOT'
-  apt 'com.github.fengdai:registry-compiler:1.0.0-SNAPSHOT'
+  implementation 'com.github.fengdai:registry:1.0.0-SNAPSHOT'
+  annotationProcessor 'com.github.fengdai:registry-compiler:1.0.0-SNAPSHOT'
 }
 ```
 
