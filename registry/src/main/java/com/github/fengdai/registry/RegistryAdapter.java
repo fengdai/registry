@@ -1,31 +1,29 @@
 package com.github.fengdai.registry;
 
-import android.view.View;
+import android.support.annotation.NonNull;
+import android.support.v7.widget.RecyclerView;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 
-public abstract class RegistryAdapter extends BaseAdapter {
-  private final Registry registry;
+public abstract class RegistryAdapter<TItem extends Registry.Item>
+    extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+  private final Registry<TItem> registry;
 
-  protected RegistryAdapter(Registry registry) {
+  protected RegistryAdapter(Registry<TItem> registry) {
     this.registry = registry;
   }
 
-  @Override public View getView(int position, View convertView, ViewGroup parent) {
-    Object item = getItem(position);
-    Registry.ItemView itemView = registry.getItemView(item);
-    if (convertView == null) {
-      convertView = itemView.newView(parent);
-    }
-    itemView.bindView(item, convertView);
-    return convertView;
+  @NonNull @Override
+  public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    return registry.createViewHolder(parent, viewType);
+  }
+
+  @Override public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+    registry.bindViewHolder(holder, getItem(position));
   }
 
   @Override public int getItemViewType(int position) {
-    return registry.getItemView(getItem(position)).getType();
+    return registry.getItemViewType(getItem(position));
   }
 
-  @Override public int getViewTypeCount() {
-    return registry.getViewTypeCount();
-  }
+  public abstract TItem getItem(int position);
 }

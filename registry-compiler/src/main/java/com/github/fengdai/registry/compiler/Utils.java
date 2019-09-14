@@ -8,19 +8,19 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 
-public class Utils {
+final class Utils {
   private Utils() {
     throw new AssertionError();
   }
 
-  static TypeMirror inferSuperTypeArgument(TypeElement element, String superClassName,
-      int typeArgumentIndex) {
-    return infer(new LinkedList<DeclaredType>(), 0, element.asType(), superClassName,
+  static TypeMirror inferSuperTypeArgument(TypeElement element, String superTypeName,
+      boolean isSuperTypeInterface, int typeArgumentIndex) {
+    return infer(new LinkedList<>(), 0, element.asType(), superTypeName, isSuperTypeInterface,
         typeArgumentIndex);
   }
 
   private static TypeMirror infer(List<DeclaredType> hierarchy, int deep, TypeMirror type,
-      String superClassName, int typeArgumentIndex) {
+      String superTypeName, boolean isSuperTypeInterface, int typeArgumentIndex) {
     DeclaredType declaredType = (DeclaredType) type;
     TypeElement typeElement = (TypeElement) declaredType.asElement();
     if (hierarchy.size() > deep + 1) {
@@ -31,20 +31,25 @@ public class Utils {
     } else if (hierarchy.size() == deep) {
       hierarchy.add(declaredType);
     }
-    if (typeElement.toString().contentEquals(superClassName)) {
+    if (typeElement.toString().contentEquals(superTypeName)) {
       // Found. Try to infer.
       return analyseHierarchy(hierarchy, typeArgumentIndex);
     } else {
       // Not found. Search implemented interfaces and super class.
-      List<TypeMirror> superTypes = new LinkedList<>(typeElement.getInterfaces());
+      List<TypeMirror> superTypes = new LinkedList<>();
+      if (isSuperTypeInterface) {
+        superTypes.addAll(typeElement.getInterfaces());
+      }
       TypeMirror superClassType = typeElement.getSuperclass();
       if (superClassType.getKind() == TypeKind.DECLARED) {
         superTypes.add(superClassType);
       }
       for (TypeMirror superType : superTypes) {
         TypeMirror typeArgument =
-            infer(hierarchy, deep + 1, superType, superClassName, typeArgumentIndex);
+            infer(hierarchy, deep + 1, superType, superTypeName, isSuperTypeInterface,
+                typeArgumentIndex);
         if (typeArgument != null) return typeArgument;
+        hierarchy.remove(hierarchy.size() - 1);
       }
     }
     return null;
