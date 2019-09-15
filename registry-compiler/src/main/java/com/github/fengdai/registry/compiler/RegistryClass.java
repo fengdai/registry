@@ -12,6 +12,8 @@ import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.WildcardTypeName;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
@@ -158,13 +160,15 @@ final class RegistryClass {
         .addModifiers(Modifier.PUBLIC)
         .addStatement("super()");
 
+    Collection<ParameterSpec> factoryParameters = new LinkedList<>();
+
     // registerViewHolderFactory
     for (IndexedViewHolderInfo viewHolder : indexedViewHolders) {
       ParameterSpec factoryParameter = null;
       if (!viewHolder.info.unresolvedDependencies.isEmpty()) {
         factoryParameter = ParameterSpec.builder(viewHolder.info.factoryImplClassName,
             "factory" + viewHolder.index).build();
-        builder.addParameter(factoryParameter);
+        factoryParameters.add(factoryParameter);
       }
       builder.addStatement(registerViewHolderFactory(viewHolder, factoryParameter));
     }
@@ -174,6 +178,11 @@ final class RegistryClass {
       builder.addStatement(registerStaticContentLayout(layout));
     }
 
+    builder.addParameters(
+        factoryParameters.stream()
+            .sorted((p0, p1) -> ((ClassName) p0.type).simpleName()
+                .compareTo(((ClassName) p1.type).simpleName()))
+            .collect(Collectors.toList()));
     return builder.build();
   }
 
