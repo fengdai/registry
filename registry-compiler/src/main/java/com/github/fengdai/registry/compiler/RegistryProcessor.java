@@ -4,10 +4,10 @@ import com.google.auto.common.AnnotationMirrors;
 import com.google.auto.service.AutoService;
 import com.google.common.collect.ImmutableSet;
 import com.sun.source.util.Trees;
-import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeScanner;
+import com.sun.tools.javac.util.Pair;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Collection;
@@ -24,7 +24,6 @@ import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -37,6 +36,7 @@ import net.ltgt.gradle.incap.IncrementalAnnotationProcessor;
 import net.ltgt.gradle.incap.IncrementalAnnotationProcessorType;
 
 import static com.github.fengdai.registry.compiler.Utils.inferSuperTypeArgument;
+import static com.google.auto.common.MoreTypes.asTypeElement;
 import static java.util.Objects.requireNonNull;
 import static javax.tools.Diagnostic.Kind.ERROR;
 
@@ -104,8 +104,9 @@ public final class RegistryProcessor extends AbstractProcessor {
   }
 
   @Override public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment env) {
+    ViewHolderInfoCache viewHolderInfoCache = new ViewHolderInfoCache();
     Map<TypeElement, ViewHolderFactoryClass> viewHolderFactoryClasses =
-        parseViewHolderFactory(env);
+        parseViewHolderFactory(env, viewHolderInfoCache);
     for (Map.Entry<TypeElement, ViewHolderFactoryClass> entry : viewHolderFactoryClasses.entrySet()) {
       TypeElement element = entry.getKey();
       ViewHolderFactoryClass registryClass = entry.getValue();
@@ -116,7 +117,7 @@ public final class RegistryProcessor extends AbstractProcessor {
       }
     }
 
-    Map<TypeElement, RegistryClass> registryClasses = parseRegistry(env);
+    Map<TypeElement, RegistryClass> registryClasses = parseRegistry(env, viewHolderInfoCache);
     for (Map.Entry<TypeElement, RegistryClass> entry : registryClasses.entrySet()) {
       TypeElement element = entry.getKey();
       RegistryClass registryClass = entry.getValue();
@@ -129,20 +130,15 @@ public final class RegistryProcessor extends AbstractProcessor {
     return true;
   }
 
-  private Map<TypeElement, ViewHolderFactoryClass> parseViewHolderFactory(RoundEnvironment env) {
-    Map<TypeElement, ViewHolderInfo> viewHolders = new LinkedHashMap<>();
+  private Map<TypeElement, ViewHolderFactoryClass> parseViewHolderFactory(RoundEnvironment env,
+      ViewHolderInfoCache viewHolderInfoCache) {
     Map<TypeElement, ViewHolderFactoryClass> viewHolderFactoryClassMap = new LinkedHashMap<>();
     for (Element element : env.getElementsAnnotatedWith(
         elementUtils.getTypeElement(REGISTER_VIEW_HOLDER_TYPE))) {
       if (typesUtils.isSubtype(element.asType(), androidViewHolderType)) {
         TypeElement viewHolderElement = (TypeElement) element;
-        ViewHolderInfo viewHolderInfo = viewHolders.get(viewHolderElement);
-        if (viewHolderInfo == null) {
-          viewHolderInfo = createViewHolderInfo(viewHolderElement);
-          viewHolders.put(viewHolderElement, viewHolderInfo);
-        }
         viewHolderFactoryClassMap.put(viewHolderElement,
-            new ViewHolderFactoryClass(viewHolderInfo));
+            new ViewHolderFactoryClass(viewHolderInfoCache.getOrCreate(viewHolderElement)));
       } else {
         error(element, "@Register.ViewHolder can only be applied to subclass of %s.",
             ANDROID_VIEW_HOLDER);
@@ -151,95 +147,76 @@ public final class RegistryProcessor extends AbstractProcessor {
     return viewHolderFactoryClassMap;
   }
 
-  private Map<TypeElement, RegistryClass> parseRegistry(RoundEnvironment env) {
+  private Map<TypeElement, RegistryClass> parseRegistry(RoundEnvironment env,
+      ViewHolderInfoCache viewHolderInfoCache) {
     Map<TypeElement, RegistryClass> registryClassMap = new LinkedHashMap<>();
-    for (Element element : env.getElementsAnnotatedWith(
-        elementUtils.getTypeElement(REGISTER_TYPE))) {
-      // TODO validation
-
+    for (Element element
+        : env.getElementsAnnotatedWith(elementUtils.getTypeElement(REGISTER_TYPE))) {
       TypeElement annotationElement = (TypeElement) element;
-      AnnotationMirror register = getAnnotationMirror(annotationElement, REGISTER_TYPE);
 
-      Map<TypeMirror, MappingInfo> mappings = new LinkedHashMap<>();
-      Map<TypeElement, IndexedViewHolderInfo> viewHolders = new LinkedHashMap<>();
+      RegisterAnnotation registerAnnotation = new RegisterAnnotation(
+          getAnnotationMirror(annotationElement, REGISTER_TYPE));
 
-      List<TypeElement> binderElements = getAnnotationElements(register, "binders");
-      for (TypeElement binderElement : binderElements) {
-        parseBinder(binderElement, mappings, viewHolders);
-      }
+      final BindingSetBuilderCache bindingSetBuilderCache = new BindingSetBuilderCache();
+      final IndexedViewHolderInfoCache indexedViewHolderInfoCache =
+          new IndexedViewHolderInfoCache(viewHolderInfoCache);
 
-      List<TypeElement> bindableViewHolderElements =
-          getAnnotationElements(register, "bindableViewHolders");
-      for (TypeElement bindableViewHolderElement : bindableViewHolderElements) {
-        parseBindableViewHolder(bindableViewHolderElement, mappings, viewHolders);
-      }
+      registerAnnotation.binders()
+          .forEach(binderElement -> {
+            // TODO validation
 
-      List<Integer> staticContentLayouts =
-          ((List<Attribute.Constant>) AnnotationMirrors.getAnnotationValue(register,
-              "staticContentLayouts").getValue())
-              .stream().map(it -> (Integer) it.value).collect(Collectors.toList());
+            TypeMirror dataType = typesUtils.erasure(
+                inferSuperTypeArgument(binderElement, BINDER, false, 0));
+            TypeMirror viewHolderType = typesUtils.erasure(
+                inferSuperTypeArgument(binderElement, BINDER, false, 1));
 
-      RegistryClass registryClass =
-          new RegistryClass(annotationElement, mappings.values(), viewHolders.values(),
-              elementToIds(annotationElement, register, staticContentLayouts).values());
+            Pair<Integer, ViewHolderInfo> indexedViewHolderInfo =
+                indexedViewHolderInfoCache.getOrCreate(asTypeElement(viewHolderType));
+            Binding binding = new Binding(binderElement,
+                asTypeElement(dataType), indexedViewHolderInfo, binderElement);
+            BindingSet.Builder builder = bindingSetBuilderCache.getOrCreate(binding.dataElement);
+            addBinding(builder, binding, annotationElement, registerAnnotation.annotation);
+          });
+
+      registerAnnotation.bindableViewHolders()
+          .forEach(bindableViewHolderElement -> {
+            // TODO validation
+
+            TypeMirror dataType = typesUtils.erasure(
+                inferSuperTypeArgument(bindableViewHolderElement, BINDABLE_VIEW_HOLDER, false, 0));
+
+            Pair<Integer, ViewHolderInfo> indexedViewHolderInfo =
+                indexedViewHolderInfoCache.getOrCreate(bindableViewHolderElement);
+            Binding binding = new Binding(bindableViewHolderElement,
+                asTypeElement(dataType), indexedViewHolderInfo, null);
+            BindingSet.Builder builder = bindingSetBuilderCache.getOrCreate(binding.dataElement);
+            addBinding(builder, binding, annotationElement, registerAnnotation.annotation);
+          });
+
+      Map<Integer, Id> staticContentLayouts = elementToIds(annotationElement,
+          registerAnnotation.annotation, registerAnnotation.staticContentLayoutsValues());
+
+      RegistryClass registryClass = new RegistryClass(annotationElement,
+          bindingSetBuilderCache.buildAll(), indexedViewHolderInfoCache.all(),
+          staticContentLayouts.values());
       registryClassMap.put(annotationElement, registryClass);
     }
     return registryClassMap;
   }
 
-  private void parseBindableViewHolder(TypeElement bindableViewHolderElement,
-      Map<TypeMirror, MappingInfo> mappings,
-      Map<TypeElement, IndexedViewHolderInfo> viewHolders) {
-    // TODO validation
-
-    TypeMirror dataType = typesUtils.erasure(
-        inferSuperTypeArgument(bindableViewHolderElement, BINDABLE_VIEW_HOLDER, false, 0));
-
-    getMapping(mappings, dataType).addBindableViewHolderInfo(
-        getOrCreateIndexViewHolderInfo(bindableViewHolderElement, viewHolders));
-  }
-
-  private void parseBinder(TypeElement binderElement,
-      Map<TypeMirror, MappingInfo> mappings,
-      Map<TypeElement, IndexedViewHolderInfo> viewHolders) {
-    // TODO validation
-
-    TypeMirror dataType = typesUtils.erasure(
-        inferSuperTypeArgument(binderElement, BINDER, false, 0));
-    TypeMirror viewHolderType = typesUtils.erasure(
-        inferSuperTypeArgument(binderElement, BINDER, false, 1));
-
-    TypeElement dataElement = (TypeElement) typesUtils.asElement(dataType);
-    TypeElement viewHolderElement = (TypeElement) typesUtils.asElement(viewHolderType);
-    IndexedViewHolderInfo indexedViewHolderInfo =
-        getOrCreateIndexViewHolderInfo(viewHolderElement, viewHolders);
-    BinderInfo binderInfo =
-        new BinderInfo(binderElement, dataElement, viewHolderElement, indexedViewHolderInfo);
-
-    getMapping(mappings, dataType).addBinderInfo(binderInfo);
-  }
-
-  private MappingInfo getMapping(Map<TypeMirror, MappingInfo> mappings, TypeMirror dataType) {
-    MappingInfo mapping = mappings.get(dataType);
-    if (mapping == null) {
-      mapping = new MappingInfo((TypeElement) typesUtils.asElement(dataType));
-      mappings.put(dataType, mapping);
+  private void addBinding(BindingSet.Builder builder, Binding binding,
+      Element annotationElement, AnnotationMirror annotationMirror
+  ) {
+    try {
+      builder.add(binding);
+    } catch (DuplicateBindingException e) {
+      processingEnv.getMessager()
+          .printMessage(ERROR, e.getMessage(), annotationElement, annotationMirror);
     }
-    return mapping;
-  }
-
-  private IndexedViewHolderInfo getOrCreateIndexViewHolderInfo(TypeElement viewHolderElement,
-      Map<TypeElement, IndexedViewHolderInfo> viewHolders) {
-    IndexedViewHolderInfo indexedViewHolderInfo = viewHolders.get(viewHolderElement);
-    if (indexedViewHolderInfo == null) {
-      indexedViewHolderInfo =
-          new IndexedViewHolderInfo(viewHolders.size(), createViewHolderInfo(viewHolderElement));
-      viewHolders.put(viewHolderElement, indexedViewHolderInfo);
-    }
-    return indexedViewHolderInfo;
   }
 
   private ViewHolderInfo createViewHolderInfo(TypeElement viewHolderElement) {
+    // TODO validation
     List<ExecutableElement> constructors =
         ElementFilter.constructorsIn(elementUtils.getAllMembers(viewHolderElement));
 
@@ -277,20 +254,8 @@ public final class RegistryProcessor extends AbstractProcessor {
     processingEnv.getMessager().printMessage(ERROR, message, element);
   }
 
-  private List<TypeElement> getAnnotationElements(AnnotationMirror annotationMirror,
-      final String elementName) {
-    // noinspection unchecked
-    List<? extends AnnotationValue> listValue =
-        (List<? extends AnnotationValue>) AnnotationMirrors.getAnnotationValue(annotationMirror,
-            elementName).getValue();
-    return listValue.stream()
-        .map(typeValue -> (TypeElement) typesUtils.asElement((TypeMirror) typeValue.getValue()))
-        .collect(Collectors.toList());
-  }
-
   private Id elementToId(Element element, AnnotationMirror annotationMirror, int value) {
-    JCTree tree =
-        (JCTree) trees.getTree(element, annotationMirror);
+    JCTree tree = (JCTree) trees.getTree(element, annotationMirror);
     if (tree != null) { // tree can be null if the references are compiled types and not source
       rScanner.reset();
       tree.accept(rScanner);
@@ -325,6 +290,59 @@ public final class RegistryProcessor extends AbstractProcessor {
       }
     }
     return null;
+  }
+
+  private class ViewHolderInfoCache {
+    private Map<TypeElement, ViewHolderInfo> viewHolders = new LinkedHashMap<>();
+
+    ViewHolderInfo getOrCreate(TypeElement viewHolderElement) {
+      ViewHolderInfo viewHolder = viewHolders.get(viewHolderElement);
+      if (viewHolder == null) {
+        viewHolder = createViewHolderInfo(viewHolderElement);
+        viewHolders.put(viewHolderElement, viewHolder);
+      }
+      return viewHolder;
+    }
+  }
+
+  private static class IndexedViewHolderInfoCache {
+    private ViewHolderInfoCache viewHolderInfoCache;
+    private Map<TypeElement, Pair<Integer, ViewHolderInfo>> viewHolders = new LinkedHashMap<>();
+
+    IndexedViewHolderInfoCache(ViewHolderInfoCache viewHolderInfoCache) {
+      this.viewHolderInfoCache = viewHolderInfoCache;
+    }
+
+    Pair<Integer, ViewHolderInfo> getOrCreate(TypeElement viewHolderElement) {
+      Pair<Integer, ViewHolderInfo> indexedViewHolderInfo = viewHolders.get(viewHolderElement);
+      if (indexedViewHolderInfo == null) {
+        indexedViewHolderInfo =
+            new Pair<>(viewHolders.size(), viewHolderInfoCache.getOrCreate(viewHolderElement));
+        viewHolders.put(viewHolderElement, indexedViewHolderInfo);
+      }
+      return indexedViewHolderInfo;
+    }
+
+    Collection<Pair<Integer, ViewHolderInfo>> all() {
+      return viewHolders.values();
+    }
+  }
+
+  private static class BindingSetBuilderCache {
+    private Map<TypeElement, BindingSet.Builder> builders = new LinkedHashMap<>();
+
+    BindingSet.Builder getOrCreate(TypeElement dataElement) {
+      BindingSet.Builder bindingSet = builders.get(dataElement);
+      if (bindingSet == null) {
+        bindingSet = new BindingSet.Builder(dataElement);
+        builders.put(dataElement, bindingSet);
+      }
+      return bindingSet;
+    }
+
+    Collection<BindingSet> buildAll() {
+      return builders.values().stream().map(BindingSet.Builder::build).collect(Collectors.toList());
+    }
   }
 
   private static class RScanner extends TreeScanner {

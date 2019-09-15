@@ -10,6 +10,7 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.WildcardTypeName;
+import com.sun.tools.javac.util.Pair;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -43,12 +44,12 @@ final class RegistryClass {
   private final ClassName annotation;
   private final String classPackage;
   private final String className;
-  private final Collection<MappingInfo> mappingInfoList;
-  private final Collection<IndexedViewHolderInfo> indexedViewHolders;
-  private final Collection<StaticContentLayout> staticContentLayouts;
+  private final Collection<BindingSet> bindingSets;
+  private final Collection<Pair<Integer, ViewHolderInfo>> indexedViewHolders;
+  private final Collection<Pair<Integer, Id>> indexedStaticContentLayouts;
 
-  RegistryClass(TypeElement annotationElement, Collection<MappingInfo> mappingInfoList,
-      Collection<IndexedViewHolderInfo> indexedViewHolders,
+  RegistryClass(TypeElement annotationElement, Collection<BindingSet> bindingSets,
+      Collection<Pair<Integer, ViewHolderInfo>> indexedViewHolders,
       Collection<Id> staticContentLayouts) {
     this.originatingElement = annotationElement;
     this.annotation = ClassName.get(annotationElement);
@@ -57,13 +58,13 @@ final class RegistryClass {
         .toString()
         .substring(classPackage.length() + 1)
         .replace('.', '$') + REGISTRY_IMPL_SUFFIX;
-    this.mappingInfoList = mappingInfoList;
+    this.bindingSets = bindingSets;
     this.indexedViewHolders = indexedViewHolders;
 
     int staticContentLayoutIndex = indexedViewHolders.size();
-    this.staticContentLayouts = new ArrayList<>(staticContentLayouts.size());
+    this.indexedStaticContentLayouts = new ArrayList<>(staticContentLayouts.size());
     for (Id layout : staticContentLayouts) {
-      this.staticContentLayouts.add(new StaticContentLayout(staticContentLayoutIndex, layout));
+      this.indexedStaticContentLayouts.add(new Pair<>(staticContentLayoutIndex, layout));
       staticContentLayoutIndex++;
     }
   }
@@ -84,20 +85,21 @@ final class RegistryClass {
     builder.addType(itemClass(itemClassName));
     builder.superclass(ParameterizedTypeName.get(REGISTRY, itemClassName));
 
-    for (MappingInfo mappingInfo : mappingInfoList) {
-      builder.addMethod(itemOfMethod(itemClassName, mappingInfo));
+    for (BindingSet bindingSet : bindingSets) {
+      builder.addMethod(itemOfMethod(itemClassName, bindingSet));
     }
 
-    for (StaticContentLayout layout : staticContentLayouts) {
+    for (Pair<Integer, Id> indexedStaticContentLayout : indexedStaticContentLayouts) {
+      int viewType = indexedStaticContentLayout.fst;
+      Id layout = indexedStaticContentLayout.snd;
       FieldSpec staticContentLayoutItemField =
-          FieldSpec.builder(itemClassName, "ITEM_" + layout.id.resourceName)
+          FieldSpec.builder(itemClassName, "ITEM_" + layout.resourceName)
               .addModifiers(Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
               .initializer("new $T(staticContentLayoutData($L), $L, null)", itemClassName,
-                  layout.id.code,
-                  layout.viewType)
+                  layout.code, viewType)
               .build();
       MethodSpec staticContentLayoutItemGetter =
-          MethodSpec.methodBuilder("itemOf_" + layout.id.resourceName)
+          MethodSpec.methodBuilder("itemOf_" + layout.resourceName)
               .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
               .returns(itemClassName)
               .addStatement("return $N", staticContentLayoutItemField)
@@ -107,44 +109,34 @@ final class RegistryClass {
     }
 
     // Constructor
-    builder.addMethod(constructor(indexedViewHolders, staticContentLayouts));
+    builder.addMethod(constructor(indexedViewHolders, indexedStaticContentLayouts));
     return builder.build();
   }
 
-  private MethodSpec itemOfMethod(ClassName itemClassName, MappingInfo mappingInfo) {
+  private MethodSpec itemOfMethod(ClassName itemClassName, BindingSet bindingSet) {
     MethodSpec.Builder builder = MethodSpec.methodBuilder("itemOf")
         .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-        .addParameter(ParameterSpec.builder(mappingInfo.getDataClassName(), "data").build())
+        .addParameter(ParameterSpec.builder(bindingSet.dataClassName, "data").build())
         .returns(itemClassName);
-    if (!mappingInfo.isOneToMany()) {
-      MappingInfo.Mapping mapping = mappingInfo.getMappings().get(0);
-      if (mapping.binderInfo == null) {
-        builder.addStatement("return new $T(data, $L, BINDABLE_VIEW_HOLDER_BINDER)",
-            itemClassName, mapping.viewType);
-      } else {
-        builder.addStatement("return new $T(data, $L, new $T())",
-            itemClassName, mapping.viewType, mapping.binderInfo.binderClassName);
-      }
+    if (!bindingSet.isMultiBinding) {
+      Binding binding = bindingSet.bindings.iterator().next();
+      builder.addStatement("return new $T(data, $L, $L)", itemClassName, binding.viewType,
+          binding.instanceCode);
     } else {
       builder.addParameter(
           ParameterSpec.builder(ANDROID_VIEW_HOLDER_CLASS, "viewHolderClass").build());
 
       int i = 0;
-      for (MappingInfo.Mapping mapping : mappingInfo.getMappings()) {
+      for (Binding binding : bindingSet.bindings) {
+        CodeBlock conditionCode =
+            CodeBlock.of("viewHolderClass == $T.class", binding.viewHolderClassName);
         if (i == 0) {
-          builder.beginControlFlow("if (viewHolderClass == $T.class)",
-              mapping.viewHolderInfo.viewHolderClassName);
+          builder.beginControlFlow("if ($L)", conditionCode);
         } else {
-          builder.nextControlFlow("else if (viewHolderClass == $T.class)",
-              mapping.viewHolderInfo.viewHolderClassName);
+          builder.nextControlFlow("else if ($L)", conditionCode);
         }
-        if (mapping.binderInfo == null) {
-          builder.addStatement("return new $T(data, $L, BINDABLE_VIEW_HOLDER_BINDER)",
-              itemClassName, mapping.viewType);
-        } else {
-          builder.addStatement("return new $T(data, $L, new $T())",
-              itemClassName, mapping.viewType, mapping.binderInfo.binderClassName);
-        }
+        builder.addStatement("return new $T(data, $L, $L)", itemClassName, binding.viewType,
+            binding.instanceCode);
         i++;
       }
       builder.nextControlFlow("else")
@@ -154,8 +146,9 @@ final class RegistryClass {
     return builder.build();
   }
 
-  private static MethodSpec constructor(Collection<IndexedViewHolderInfo> indexedViewHolders,
-      Collection<StaticContentLayout> staticContentLayouts) {
+  private static MethodSpec constructor(
+      Collection<Pair<Integer, ViewHolderInfo>> indexedViewHolders,
+      Collection<Pair<Integer, Id>> indexedStaticContentLayouts) {
     MethodSpec.Builder builder = MethodSpec.constructorBuilder()
         .addModifiers(Modifier.PUBLIC)
         .addStatement("super()");
@@ -163,19 +156,27 @@ final class RegistryClass {
     Collection<ParameterSpec> factoryParameters = new LinkedList<>();
 
     // registerViewHolderFactory
-    for (IndexedViewHolderInfo viewHolder : indexedViewHolders) {
-      ParameterSpec factoryParameter = null;
-      if (!viewHolder.info.unresolvedDependencies.isEmpty()) {
-        factoryParameter = ParameterSpec.builder(viewHolder.info.factoryImplClassName,
-            "factory" + viewHolder.index).build();
+    for (Pair<Integer, ViewHolderInfo> indexedViewHolder : indexedViewHolders) {
+      int viewType = indexedViewHolder.fst;
+      ViewHolderInfo viewHolder = indexedViewHolder.snd;
+      ClassName factoryImplClassName = viewHolder.factoryImplClassName;
+      CodeBlock factoryInstanceCode;
+      if (!viewHolder.unresolvedDependencies.isEmpty()) {
+        ParameterSpec factoryParameter = ParameterSpec.builder(factoryImplClassName,
+            "factory" + viewType).build();
         factoryParameters.add(factoryParameter);
+        factoryInstanceCode = CodeBlock.of("$N", factoryParameter);
+      } else {
+        factoryInstanceCode = CodeBlock.of("new $T()", factoryImplClassName);
       }
-      builder.addStatement(registerViewHolderFactory(viewHolder, factoryParameter));
+      builder.addStatement("registerViewHolderFactory($L, $L)", viewType, factoryInstanceCode);
     }
 
     // registerStaticContentLayout
-    for (StaticContentLayout layout : staticContentLayouts) {
-      builder.addStatement(registerStaticContentLayout(layout));
+    for (Pair<Integer, Id> indexedStaticContentLayout : indexedStaticContentLayouts) {
+      int viewType = indexedStaticContentLayout.fst;
+      Id layout = indexedStaticContentLayout.snd;
+      builder.addStatement("registerStaticContentLayout($L, $L)", viewType, layout.code);
     }
 
     builder.addParameters(
@@ -184,18 +185,6 @@ final class RegistryClass {
                 .compareTo(((ClassName) p1.type).simpleName()))
             .collect(Collectors.toList()));
     return builder.build();
-  }
-
-  private static CodeBlock registerViewHolderFactory(IndexedViewHolderInfo viewHolder,
-      ParameterSpec factoryParameter) {
-    CodeBlock factory = factoryParameter != null
-        ? CodeBlock.of("$N", factoryParameter)
-        : CodeBlock.of("new $T()", viewHolder.info.factoryImplClassName);
-    return CodeBlock.of("registerViewHolderFactory($L, $L)", viewHolder.index, factory);
-  }
-
-  private static CodeBlock registerStaticContentLayout(StaticContentLayout layout) {
-    return CodeBlock.of("registerStaticContentLayout($L, $L)", layout.viewType, layout.id.code);
   }
 
   private static TypeSpec itemClass(ClassName name) {

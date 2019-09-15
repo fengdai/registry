@@ -40,25 +40,19 @@ final class ViewHolderFactoryClass {
     }
     typeBuilder.addMethod(constructorBuilder.addModifiers(Modifier.PUBLIC).build());
     // create method
-    typeBuilder.addMethod(createMethod(viewHolderInfo));
-    return JavaFile.builder(viewHolderInfo.factoryImplClassName.packageName(), typeBuilder.build())
-        .addFileComment("Generated code from Registry. Do not modify!")
-        .build();
-  }
-
-  private static MethodSpec createMethod(ViewHolderInfo viewHolderInfo) {
-    MethodSpec.Builder builder = MethodSpec.methodBuilder("create")
-        .addAnnotation(Override.class)
-        .addModifiers(Modifier.PUBLIC)
-        .returns(VIEW_HOLDER)
-        .addParameter(ParameterSpec.builder(VIEW_GROUP, "parent").build());
-
     Collection<CodeBlock> dependencies = viewHolderInfo.dependencies.stream()
         .map(it -> it.instanceCode)
         .collect(Collectors.toList());
-
-    builder.addStatement("return new $T($L)", viewHolderInfo.viewHolderClassName,
-        CodeBlock.join(dependencies, ", "));
-    return builder.build();
+    MethodSpec.Builder createMethodBuilder = MethodSpec.methodBuilder("create")
+        .addAnnotation(Override.class)
+        .addModifiers(Modifier.PUBLIC)
+        .returns(VIEW_HOLDER)
+        .addParameter(ParameterSpec.builder(VIEW_GROUP, "parent").build())
+        .addStatement("return new $T($L)", viewHolderInfo.viewHolderClassName,
+            CodeBlock.join(dependencies, ", "));
+    typeBuilder.addMethod(createMethodBuilder.build());
+    return JavaFile.builder(viewHolderInfo.factoryImplClassName.packageName(), typeBuilder.build())
+        .addFileComment("Generated code from Registry. Do not modify!")
+        .build();
   }
 }
