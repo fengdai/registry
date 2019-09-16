@@ -12,9 +12,9 @@ public abstract class Registry<TItem extends Registry.Item> {
   public abstract static class Item {
     public final Object data;
     public final int viewType;
-    public final Binder<?, ? extends RecyclerView.ViewHolder> binder;
+    public final Binder binder;
 
-    protected Item(Object data, int viewType, Binder<?, ? extends RecyclerView.ViewHolder> binder) {
+    protected Item(Object data, int viewType, Binder binder) {
       this.data = data;
       this.viewType = viewType;
       this.binder = binder;

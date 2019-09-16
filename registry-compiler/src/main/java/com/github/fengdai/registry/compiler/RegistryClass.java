@@ -197,10 +197,7 @@ final class RegistryClass {
             .addModifiers(Modifier.PRIVATE)
             .addParameter(ParameterSpec.builder(TypeName.OBJECT, "data").build())
             .addParameter(ParameterSpec.builder(TypeName.INT, "viewType").build())
-            .addParameter(
-                ParameterSpec.builder(ParameterizedTypeName.get(BINDER,
-                    WildcardTypeName.subtypeOf(TypeName.OBJECT),
-                    WildcardTypeName.subtypeOf(ANDROID_VIEW_HOLDER)), "binder").build())
+            .addParameter(ParameterSpec.builder(BINDER, "binder").build())
             .addStatement("super(data, viewType, binder)")
             .build())
         .build();
