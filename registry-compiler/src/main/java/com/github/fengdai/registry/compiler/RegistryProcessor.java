@@ -263,7 +263,7 @@ public final class RegistryProcessor extends AbstractProcessor {
         }
         int id = (int) AnnotationMirrors.getAnnotationValue(inflateAnnotation, "value").getValue();
         Id layoutRes = elementToId(parameterElement, inflateAnnotation, id);
-        inflateLayout = new InflateLayout(layoutRes, (TypeElement) typesUtils.asElement(viewType));
+        inflateLayout = new InflateLayout(layoutRes, viewType);
       }
       dependencies.add(new ViewHolderInfo.Dependency(parameterElement, inflateLayout));
     }

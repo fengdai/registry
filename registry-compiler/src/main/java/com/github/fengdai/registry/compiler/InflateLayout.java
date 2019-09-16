@@ -1,14 +1,14 @@
 package com.github.fengdai.registry.compiler;
 
-import com.squareup.javapoet.ClassName;
-import javax.lang.model.element.TypeElement;
+import com.squareup.javapoet.TypeName;
+import javax.lang.model.type.TypeMirror;
 
 class InflateLayout {
   final Id layoutRes;
-  final ClassName viewClassName;
+  final TypeName viewTypeName;
 
-  InflateLayout(Id layoutRes, TypeElement viewElement) {
+  InflateLayout(Id layoutRes, TypeMirror viewType) {
     this.layoutRes = layoutRes;
-    this.viewClassName = ClassName.get(viewElement);
+    this.viewTypeName = TypeName.get(viewType);
   }
 }

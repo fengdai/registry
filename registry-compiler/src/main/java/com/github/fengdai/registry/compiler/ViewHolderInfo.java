@@ -62,7 +62,7 @@ final class ViewHolderInfo {
 
       if (inflateLayout != null) {
         instanceCode = CodeBlock.of("($T) $T.inflate(parent, $L)",
-            inflateLayout.viewClassName, UTILS, inflateLayout.layoutRes.code);
+            inflateLayout.viewTypeName, UTILS, inflateLayout.layoutRes.code);
         canBeResolved = true;
       } else if (typeName.equals(RECYCLER_VIEW)) {
         instanceCode = CodeBlock.of("($T) parent", RECYCLER_VIEW);
