@@ -4,14 +4,9 @@ buildscript {
     jcenter()
     google()
   }
-
-  dependencies {
-    classpath "com.jakewharton:butterknife-gradle-plugin:9.0.0"
-  }
 }
 
 apply plugin: 'com.android.library'
-apply plugin: 'com.jakewharton.butterknife'
 
 android {
   compileSdkVersion rootProject.ext.compileSdkVersion

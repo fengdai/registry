@@ -39,7 +39,7 @@ final class ViewHolderInfo {
 
   static class Dependency {
     private static final ClassName UTILS =
-        ClassName.get("com.github.fengdai.registry.internal", "Utils");
+        ClassName.get("com.github.fengdai.registry", "Utils");
     private static final ClassName RECYCLER_VIEW =
         ClassName.get("android.support.v7.widget", "RecyclerView");
 

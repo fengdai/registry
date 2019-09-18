@@ -1,4 +1,4 @@
-package com.github.fengdai.registry.internal;
+package com.github.fengdai.registry;
 
 import android.view.LayoutInflater;
 import android.view.View;
