@@ -1,0 +1,22 @@
+apply plugin: 'java-library'
+apply plugin: 'org.jetbrains.kotlin.jvm'
+apply plugin: 'org.jetbrains.kotlin.kapt'
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+dependencies {
+  implementation project(':viewholder-inject')
+  implementation deps.supportAnnotations
+  compileOnly deps.autoService
+  kapt deps.autoService
+  compileOnly files(org.gradle.internal.jvm.Jvm.current().getToolsJar())
+  implementation deps.kotlin
+  implementation deps.autoCommon
+  implementation deps.javaPoet
+  implementation deps.incap.runtime
+  kapt deps.incap.processor
+  testImplementation deps.junit
+}
+
+apply from: rootProject.file('gradle/gradle-mvn-push.gradle')

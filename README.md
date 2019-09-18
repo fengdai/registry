@@ -1,67 +1,87 @@
 # Registry
 
-Registry provides a mechanism for mapping ListView's items to their itemViews. It can generate static code about the item-to-itemView relationship. You'll never care about the item-view-type and view-type-count anymore. They can be counting by Registry automatically.
+Registry helps you use ViewHolders to modularize RecyclerView and compose them easily.
 
-# How to use
+# Example
 
-Say, we have a multi-view-type ListView which displays two kind of item: Foo and Bar.
+Say, we have a RecyclerView which displays two kinds of item: Foo and Bar. It also has a footer which shows static content like "end".
 
-1. Define an annotation named FooBarList with ```@Register``` annotation.
+1. Extend `BinderViewHolder` to define your ViewHolders.
 ```java
-@Register
-public @interface FooBarList {
-}
-```
+public class FooViewHolder extends BinderViewHolder<Foo> {
+  public FooViewHolder(View itemView) {
+    super(itemView)
+  }
 
-2. Define ```ViewBinder``` for mapping Foo and Bar to their views.
-```java
-// For Foo.
-@FooBarList // Indicates it's for FooBarList.
-@Layout(R.layout.text_view) // Provides layoutRes for Foo's view.
-public class FooBinder implements ViewBinder<Foo, TextView> { // R.layout.text_view is a TextView.
-  @Override public void bindView(Foo item, TextView view) {
+  @Override public void bind(Foo data) {
     // Do binding.
   }
 }
 ```
 ```java
-// For Bar.
-@FooBarList
-@Layout(R.layout.linear_layout)
-public class BarBinder implements ViewBinder<Bar, LinearLayout> { // R.layout.linear_layout is a LinearLayout.
-  @Override public void bindView(Bar item, LinearLayout view) {
+public class BarViewHolder extends BinderViewHolder<Bar> {
+  public BarViewHolder(View itemView) {
+    super(itemView)
+  }
+
+  @Override public void bind(Bar data) {
     // Do binding.
   }
 }
 ```
 
-3. Create Registry for FooBarList and define the ListView's Adapter.
+2. Define your Registry interface:
 ```java
-public class Adapter extends RegistryAdapter {
-  protected Adapter() {
-    // Create the Registry.
-    super(Registry.create(FooBarList.class));
-  }
-  // ...
+@Registry
+public interface SampleRegistry {
+  @Registry.Item
+  interface Item extends RegistryItem {}
+
+  // Binds Foo to FooViewHolder
+  @BindsViewHolder(FooViewHolder.class)
+  Item fooItem(Foo foo);
+
+  // Binds Bar to BarViewHolder
+  @BindsViewHolder(BarViewHolder.class)
+  Item barItem(Bar bar);
+
+  // Binds a layout 'footer' which has a TextView showing "end"
+  @BindsLayout(R.layout.footer)
+  Item footerItem();
 }
+```
+
+3. Create RecyclerView.Adapter:
+```java
+AdapterDelegate<SampleRegistry.Item> adapterDelegate = new SampleRegistry_Impl.AdapterDelegate(
+    parent -> new FooViewHolder(layoutInflater.inflate(R.layout.foo, parent, false)),
+    parent -> new BarViewHolder((TextView) layoutInflater.inflate(R.layout.bar, parent, false)));
+RegistryListAdapter<SampleRegistry.Item> adapter = new RegistryListAdapter<>(adapterDelegate, new DiffCallback());
+```
+
+4. Render RecyclerView:
+```java
+SampleRegistry sampleRegistry = new SampleRegistry_Impl();
+adapter.submitList(Arrays.asList(
+  sampleRegistry.fooItem(new Foo()), // create the Foo item
+  sampleRegistry.barItem(new Bar()), // create the Bar item
+  sampleRegistry.footerItem())); // create the footer item
 ```
 
 Done.:tada:
+
+# More details
+
+* [Simple example](https://github.com/fengdai/registry/tree/master/registry-sample)
+* [Simple example with ViewHolder injection](https://github.com/fengdai/registry/tree/master/registry-viewholder-inject-sample)
 
 # Download
 
 Gradle:
 ```groovy
-allprojects {
-  repositories {
-    maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
-  }
-}
-```
-```groovy
 dependencies {
-  implementation 'com.github.fengdai:registry:1.0.0-SNAPSHOT'
-  annotationProcessor 'com.github.fengdai:registry-compiler:1.0.0-SNAPSHOT'
+  implementation 'com.github.fengdai:registry:0.2.0'
+  annotationProcessor 'com.github.fengdai:registry-compiler:0.2.0'
 }
 ```
 

@@ -1,10 +1,14 @@
 buildscript {
+  apply from: "$rootDir/gradle/dependencies.gradle"
+
   repositories {
     google()
+    mavenCentral()
     jcenter()
   }
   dependencies {
     classpath 'com.android.tools.build:gradle:3.5.0'
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}"
   }
 }
 
@@ -20,12 +24,4 @@ allprojects {
 
 task clean(type: Delete) {
   delete rootProject.buildDir
-}
-
-ext {
-  minSdkVersion = 14
-  targetSdkVersion = 28
-  compileSdkVersion = 28
-  sourceCompatibilityVersion = JavaVersion.VERSION_1_7
-  targetCompatibilityVersion = JavaVersion.VERSION_1_7
 }

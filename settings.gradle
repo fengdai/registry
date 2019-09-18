@@ -1,2 +1,8 @@
-rootProject.name = "parent"
-include ':registry', ':registry-compiler', ':sample:app', ':sample:library'
+rootProject.name = "registry-parent"
+include ':viewholder-factory'
+include ':registry'
+include ':registry-processor'
+include ':registry-sample'
+include ':viewholder-inject'
+include ':viewholder-inject-processor'
+include ':registry-viewholder-inject-sample'
