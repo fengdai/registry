@@ -7,6 +7,7 @@ import android.support.v7.widget.RecyclerView;
 import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewGroup;
+import java.util.List;
 
 public abstract class Registry<TItem extends Registry.Item> {
   public abstract static class Item {
@@ -24,7 +25,12 @@ public abstract class Registry<TItem extends Registry.Item> {
   protected final static Binder BINDABLE_VIEW_HOLDER_BINDER =
       new Binder<Object, BindableViewHolder<Object>>() {
         @Override public void bind(Object o, BindableViewHolder<Object> viewHolder) {
-          viewHolder.bind(o);
+          throw new IllegalStateException();
+        }
+
+        @Override public void bind(Object o, BindableViewHolder<Object> viewHolder,
+            @NonNull List<Object> payloads) {
+          viewHolder.bind(o, payloads);
         }
       };
 
@@ -50,11 +56,12 @@ public abstract class Registry<TItem extends Registry.Item> {
     return viewHolderFactories.get(viewType).create(parent);
   }
 
-  public final void bindViewHolder(RecyclerView.ViewHolder viewHolder, TItem item) {
+  public final void bindViewHolder(RecyclerView.ViewHolder viewHolder, TItem item,
+      @NonNull List<Object> payloads) {
     Binder binder = item.binder;
     if (binder != null) {
       // noinspection unchecked
-      binder.bind(item.data, viewHolder);
+      binder.bind(item.data, viewHolder, payloads);
     }
   }
 
