@@ -48,6 +48,10 @@ public abstract class Registry<TItem extends Registry.Item> {
     });
   }
 
+  public final int getItemViewTypeCount() {
+    return viewHolderFactories.size();
+  }
+
   public final int getItemViewType(TItem item) {
     return item.viewType;
   }
