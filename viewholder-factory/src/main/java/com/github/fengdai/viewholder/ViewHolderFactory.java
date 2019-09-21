@@ -1,4 +1,4 @@
-package com.github.fengdai.registry;
+package com.github.fengdai.viewholder;
 
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;

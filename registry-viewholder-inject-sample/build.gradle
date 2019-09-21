@@ -1,0 +1,35 @@
+apply plugin: 'com.android.application'
+
+android {
+  compileSdkVersion 28
+
+  defaultConfig {
+    applicationId 'com.example.registry.inject'
+    minSdkVersion 14
+    targetSdkVersion 28
+    versionCode 1
+    versionName '1.0.0'
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
+
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  implementation project(':registry')
+  annotationProcessor project(':registry-processor')
+  implementation deps.recyclerView
+
+  implementation project(':viewholder-inject')
+  annotationProcessor project(':viewholder-inject-processor')
+  implementation deps.dagger
+  annotationProcessor deps.daggerCompiler
+
+  testImplementation 'junit:junit:4.12'
+}

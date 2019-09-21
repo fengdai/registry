@@ -1,8 +1,5 @@
 package com.github.fengdai.registry.processor
 
-import com.github.fengdai.registry.Binder
-import com.github.fengdai.registry.Registry
-import com.github.fengdai.registry.ViewHolderFactory
 import com.github.fengdai.registry.processor.ItemOfMethodNameSuffix.FULL
 import com.github.fengdai.registry.processor.ItemOfMethodNameSuffix.NONE
 import com.github.fengdai.registry.processor.ItemOfMethodNameSuffix.SIMPLE
@@ -22,13 +19,14 @@ import javax.lang.model.element.Modifier.PRIVATE
 import javax.lang.model.element.Modifier.PUBLIC
 import javax.lang.model.element.Modifier.STATIC
 
-private val VIEW_HOLDER_FACTORY = ClassName.get(ViewHolderFactory::class.java)
-private val REGISTRY = ClassName.get(Registry::class.java)
-private val BINDER = ClassName.get(Binder::class.java)
+private val VIEW_HOLDER_FACTORY = ClassName.get("com.github.fengdai.viewholder", "ViewHolderFactory")
+private val REGISTRY = ClassName.get("com.github.fengdai.registry", "Registry")
+private val BINDER = ClassName.get("com.github.fengdai.registry", "Binder")
 
 data class RegistryClass(
   val annotation: ClassName,
   val public: Boolean,
+  val injected: Boolean,
   val bindingSets: List<BindingSet>,
   val indexedViewHolderTypes: List<Pair<Int, TypeName>>,
   val staticContentLayouts: List<Id>
@@ -52,6 +50,11 @@ data class RegistryClass(
         .superclass(ParameterizedTypeName.get(REGISTRY, generatedItemType))
         .addMethod(MethodSpec.constructorBuilder()
             .addModifiers(PUBLIC)
+            .apply {
+              if (injected) {
+                addAnnotation(ClassName.get("javax.inject", "Inject"))
+              }
+            }
             .applyEach(sortedIndexedViewHolders) {
               addParameter(
                   ParameterizedTypeName.get(VIEW_HOLDER_FACTORY, it.second), "factory${it.first}"

@@ -7,8 +7,7 @@ dependencies {
   api project(':viewholder-factory')
   compileOnly deps.android
   compileOnly deps.recyclerViewJar
-  compileOnly deps.supportAnnotations
-  compileOnly deps.inject
+  api deps.supportAnnotations
 }
 
 apply from: rootProject.file('gradle/gradle-mvn-push.gradle')

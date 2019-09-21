@@ -6,7 +6,8 @@ sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
 
 dependencies {
-  compileOnly deps.android
+  implementation project(':viewholder-inject')
+  implementation deps.supportAnnotations
   compileOnly deps.autoService
   kapt deps.autoService
   compileOnly files(org.gradle.internal.jvm.Jvm.current().getToolsJar())

@@ -7,6 +7,7 @@ import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import com.github.fengdai.viewholder.ViewHolderFactory;
 import java.util.List;
 
 public abstract class Registry<ItemT> {
