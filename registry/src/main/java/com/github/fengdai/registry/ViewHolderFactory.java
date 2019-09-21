@@ -1,8 +1,9 @@
 package com.github.fengdai.registry;
 
+import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.ViewGroup;
 
-public interface ViewHolderFactory {
-  RecyclerView.ViewHolder create(ViewGroup parent);
+public interface ViewHolderFactory<ViewHolderT extends RecyclerView.ViewHolder> {
+  @NonNull ViewHolderT create(@NonNull ViewGroup parent);
 }

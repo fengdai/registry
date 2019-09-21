@@ -8,18 +8,18 @@ import android.support.v7.widget.RecyclerView;
 import android.view.ViewGroup;
 import java.util.List;
 
-public class RegistryListAdapter<TItem extends Registry.Item>
-    extends ListAdapter<TItem, RecyclerView.ViewHolder> {
-  private final Registry<TItem> registry;
+public class RegistryListAdapter<ItemT>
+    extends ListAdapter<ItemT, RecyclerView.ViewHolder> {
+  private final Registry<ItemT> registry;
 
-  public RegistryListAdapter(Registry<TItem> registry,
-      @NonNull DiffUtil.ItemCallback<TItem> diffCallback) {
+  public RegistryListAdapter(Registry<ItemT> registry,
+      @NonNull DiffUtil.ItemCallback<ItemT> diffCallback) {
     super(diffCallback);
     this.registry = registry;
   }
 
-  public RegistryListAdapter(Registry<TItem> registry,
-      @NonNull AsyncDifferConfig<TItem> config) {
+  public RegistryListAdapter(Registry<ItemT> registry,
+      @NonNull AsyncDifferConfig<ItemT> config) {
     super(config);
     this.registry = registry;
   }
