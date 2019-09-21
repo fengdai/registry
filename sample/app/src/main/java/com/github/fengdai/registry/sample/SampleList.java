@@ -12,7 +12,7 @@ import com.github.fengdai.registry.sample.holder.CardVH;
         CardBinder_TextOnly.class,
         HeadBinder.class
     },
-    bindableViewHolders = {
+    binderViewHolders = {
         CardVH.class
     },
     staticContentLayouts = {

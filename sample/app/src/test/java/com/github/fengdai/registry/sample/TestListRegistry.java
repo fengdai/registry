@@ -32,7 +32,7 @@ public class TestListRegistry extends Registry<TestListRegistry.Item> {
     if (viewHolderClass == TextViewVH.class) {
       return new Item(data, 0, new CardBinder_TextOnly());
     } else if (viewHolderClass == CardVH.class) {
-      return new Item(data, 1, BINDABLE_VIEW_HOLDER_BINDER);
+      return new Item(data, 1, BINDER_VIEW_HOLDER_BINDER);
     } else {
       throw new IllegalArgumentException("viewHolderClass");
     }

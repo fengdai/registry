@@ -22,13 +22,13 @@ public abstract class Registry<TItem extends Registry.Item> {
     }
   }
 
-  protected final static Binder BINDABLE_VIEW_HOLDER_BINDER =
-      new Binder<Object, BindableViewHolder<Object>>() {
-        @Override public void bind(Object o, BindableViewHolder<Object> viewHolder) {
+  protected final static Binder BINDER_VIEW_HOLDER_BINDER =
+      new Binder<Object, BinderViewHolder<Object>>() {
+        @Override public void bind(Object o, BinderViewHolder<Object> viewHolder) {
           throw new IllegalStateException();
         }
 
-        @Override public void bind(Object o, BindableViewHolder<Object> viewHolder,
+        @Override public void bind(Object o, BinderViewHolder<Object> viewHolder,
             @NonNull List<Object> payloads) {
           viewHolder.bind(o, payloads);
         }

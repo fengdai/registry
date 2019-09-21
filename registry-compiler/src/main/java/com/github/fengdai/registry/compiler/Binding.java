@@ -27,7 +27,7 @@ final class Binding {
     this.binderElement = binderElement;
 
     if (binderElement == null) {
-      instanceCode = CodeBlock.of("BINDABLE_VIEW_HOLDER_BINDER");
+      instanceCode = CodeBlock.of("BINDER_VIEW_HOLDER_BINDER");
     } else {
       instanceCode = CodeBlock.of("new $T()", ClassName.get(binderElement));
     }

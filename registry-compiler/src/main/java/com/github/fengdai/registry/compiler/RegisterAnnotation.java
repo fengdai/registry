@@ -23,8 +23,8 @@ final class RegisterAnnotation {
         .collect(ImmutableSet.toImmutableSet());
   }
 
-  ImmutableSet<TypeElement> bindableViewHolders() {
-    return ((Attribute.Array) getAnnotationValue(annotation, "bindableViewHolders")).getValue()
+  ImmutableSet<TypeElement> binderViewHolders() {
+    return ((Attribute.Array) getAnnotationValue(annotation, "binderViewHolders")).getValue()
         .stream()
         .filter(attribute -> attribute instanceof Attribute.Class)
         .map(it -> MoreTypes.asTypeElement(((Attribute.Class) it).getValue()))

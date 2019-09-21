@@ -12,7 +12,7 @@ public @interface Register {
 
   Class<? extends Binder<?, ?>>[] binders() default {};
 
-  Class<? extends BindableViewHolder<?>>[] bindableViewHolders() default {};
+  Class<? extends BinderViewHolder<?>>[] binderViewHolders() default {};
 
   @LayoutRes int[] staticContentLayouts() default {};
 

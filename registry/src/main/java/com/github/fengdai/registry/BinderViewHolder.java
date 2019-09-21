@@ -5,9 +5,13 @@ import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import java.util.List;
 
-public abstract class BindableViewHolder<TData> extends RecyclerView.ViewHolder {
+/**
+ * A {@link RecyclerView.ViewHolder} which is also {@link Binder} like. Provides binding logic
+ * which binds instance of {@link TData} to itself.
+ */
+public abstract class BinderViewHolder<TData> extends RecyclerView.ViewHolder {
 
-  public BindableViewHolder(@NonNull View itemView) {
+  public BinderViewHolder(@NonNull View itemView) {
     super(itemView);
   }
 

@@ -3,13 +3,13 @@ package com.github.fengdai.registry.sample.holder;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import com.github.fengdai.registry.BindableViewHolder;
+import com.github.fengdai.registry.BinderViewHolder;
 import com.github.fengdai.registry.Inflate;
 import com.github.fengdai.registry.Register;
 import com.github.fengdai.registry.sample.model.Card;
 
 @Register.ViewHolder
-public class CardVH extends BindableViewHolder<Card> {
+public class CardVH extends BinderViewHolder<Card> {
   public final ImageView icon;
   public final TextView text;
 

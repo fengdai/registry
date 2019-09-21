@@ -52,8 +52,7 @@ public final class RegistryProcessor extends AbstractProcessor {
       "android.support.v7.widget.RecyclerView.ViewHolder";
 
   private static final String INFLATE_TYPE = "com.github.fengdai.registry.Inflate";
-  private static final String BINDABLE_VIEW_HOLDER =
-      "com.github.fengdai.registry.BindableViewHolder";
+  private static final String BINDER_VIEW_HOLDER = "com.github.fengdai.registry.BinderViewHolder";
   private static final String BINDER = "com.github.fengdai.registry.Binder";
 
   private Elements elementUtils;
@@ -178,16 +177,16 @@ public final class RegistryProcessor extends AbstractProcessor {
             addBinding(builder, binding, annotationElement, registerAnnotation.annotation);
           });
 
-      registerAnnotation.bindableViewHolders()
-          .forEach(bindableViewHolderElement -> {
+      registerAnnotation.binderViewHolders()
+          .forEach(binderViewHolderElement -> {
             // TODO validation
 
             TypeMirror dataType = typesUtils.erasure(
-                inferSuperTypeArgument(bindableViewHolderElement, BINDABLE_VIEW_HOLDER, false, 0));
+                inferSuperTypeArgument(binderViewHolderElement, BINDER_VIEW_HOLDER, false, 0));
 
             Pair<Integer, ViewHolderInfo> indexedViewHolderInfo =
-                indexedViewHolderInfoCache.getOrCreate(bindableViewHolderElement);
-            Binding binding = new Binding(bindableViewHolderElement,
+                indexedViewHolderInfoCache.getOrCreate(binderViewHolderElement);
+            Binding binding = new Binding(binderViewHolderElement,
                 asTypeElement(dataType), indexedViewHolderInfo, null);
             BindingSet.Builder builder = bindingSetBuilderCache.getOrCreate(binding.dataElement);
             addBinding(builder, binding, annotationElement, registerAnnotation.annotation);
