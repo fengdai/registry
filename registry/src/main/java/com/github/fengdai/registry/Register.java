@@ -1,13 +1,14 @@
 package com.github.fengdai.registry;
 
 import android.support.annotation.LayoutRes;
-import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Retention(RetentionPolicy.CLASS)
-@Target(ElementType.ANNOTATION_TYPE)
+import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
+import static java.lang.annotation.RetentionPolicy.CLASS;
+
+@Target(ANNOTATION_TYPE)
+@Retention(CLASS)
 public @interface Register {
 
   Class<? extends Binder<?, ?>>[] binders() default {};
@@ -15,8 +16,4 @@ public @interface Register {
   Class<? extends BinderViewHolder<?>>[] binderViewHolders() default {};
 
   @LayoutRes int[] staticContentLayouts() default {};
-
-  @Retention(RetentionPolicy.CLASS)
-  @Target(ElementType.TYPE)
-  @interface ViewHolder {}
 }

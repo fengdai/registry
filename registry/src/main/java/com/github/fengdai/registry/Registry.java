@@ -57,7 +57,7 @@ public abstract class Registry<TItem extends Registry.Item> {
   }
 
   @NonNull public final RecyclerView.ViewHolder createViewHolder(ViewGroup parent, int viewType) {
-    return viewHolderFactories.get(viewType).create(parent);
+    return viewHolderFactories.get(viewType).create((RecyclerView) parent);
   }
 
   public final void bindViewHolder(RecyclerView.ViewHolder viewHolder, TItem item,
@@ -81,7 +81,7 @@ public abstract class Registry<TItem extends Registry.Item> {
     }
 
     @Override public int hashCode() {
-      return super.hashCode();
+      return layoutRes;
     }
 
     @Override public boolean equals(@Nullable Object that) {

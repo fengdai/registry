@@ -17,8 +17,11 @@ android {
 }
 
 dependencies {
+  compileOnly project(':viewholder-inject-annotations')
+  annotationProcessor project(':viewholder-inject-processor')
   implementation project(':registry')
-  annotationProcessor project(':registry-compiler')
+  annotationProcessor project(':registry-processor')
   implementation 'com.android.support:appcompat-v7:28.0.0'
+  implementation 'com.android.support:recyclerview-v7:28.0.0'
   testImplementation 'junit:junit:4.12'
 }
