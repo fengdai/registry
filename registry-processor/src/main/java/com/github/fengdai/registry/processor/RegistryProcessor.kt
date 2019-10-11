@@ -5,12 +5,14 @@ import com.github.fengdai.registry.processor.RegistryProcessor.InjectionType.JAV
 import com.github.fengdai.registry.processor.RegistryProcessor.InjectionType.NONE
 import com.github.fengdai.registry.processor.RegistryProcessor.InjectionType.VIEW_HOLDER_INJECTION
 import com.github.fengdai.registry.processor.internal.MirrorValue
+import com.github.fengdai.registry.processor.internal.MirrorValue.Type
 import com.github.fengdai.registry.processor.internal.cast
 import com.github.fengdai.registry.processor.internal.castEach
 import com.github.fengdai.registry.processor.internal.filterNotNullValues
 import com.github.fengdai.registry.processor.internal.getAnnotation
 import com.github.fengdai.registry.processor.internal.getValue
 import com.github.fengdai.registry.processor.internal.hasAnnotation
+import com.github.fengdai.registry.processor.internal.rawClassName
 import com.github.fengdai.registry.processor.internal.toClassName
 import com.github.fengdai.registry.processor.internal.toTypeName
 import com.google.auto.common.AnnotationMirrors.getAnnotationValue
@@ -29,16 +31,20 @@ import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
-import javax.lang.model.element.ElementKind.ANNOTATION_TYPE
 import javax.lang.model.element.ElementKind.CLASS
 import javax.lang.model.element.ElementKind.CONSTRUCTOR
+import javax.lang.model.element.ElementKind.METHOD
+import javax.lang.model.element.ExecutableElement
+import javax.lang.model.element.Modifier.PRIVATE
 import javax.lang.model.element.Modifier.PUBLIC
+import javax.lang.model.element.Modifier.STATIC
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 import javax.tools.Diagnostic.Kind.ERROR
 
 private const val REGISTER = "com.github.fengdai.registry.Register"
+private const val IDENTIFIER = "com.github.fengdai.registry.Identifier"
 private const val REGISTRY_MODULE = "com.github.fengdai.registry.RegistryModule"
 private const val BINDER_VIEW_HOLDER = "com.github.fengdai.registry.BinderViewHolder"
 private const val BINDER = "com.github.fengdai.registry.Binder"
@@ -48,6 +54,7 @@ private const val BINDER = "com.github.fengdai.registry.Binder"
 class RegistryProcessor : AbstractProcessor() {
   override fun getSupportedAnnotationTypes(): Set<String> = setOf(
       REGISTER,
+      IDENTIFIER,
       REGISTRY_MODULE
   )
 
@@ -58,18 +65,18 @@ class RegistryProcessor : AbstractProcessor() {
     elements = env.elementUtils
     types = env.typeUtils
     filer = env.filer
-    idScanner = IdScanner(processingEnv)
 
     registerType = elements.getTypeElement(REGISTER)
+    identifierType = elements.getTypeElement(IDENTIFIER)
     registryModuleType = elements.getTypeElement(REGISTRY_MODULE)
   }
 
   private lateinit var elements: Elements
   private lateinit var types: Types
   private lateinit var filer: Filer
-  private lateinit var idScanner: IdScanner
 
   private lateinit var registerType: TypeElement
+  private lateinit var identifierType: TypeElement
   private lateinit var registryModuleType: TypeElement
 
   private val userModules = mutableListOf<String>()
@@ -94,8 +101,14 @@ class RegistryProcessor : AbstractProcessor() {
     registryModuleElements.associateWith { it.toRegistryInjectionModule() }
         .forEach(::writeRegistryModule)
 
+    env.getElementsAnnotatedWith(identifierType)
+        .filter { !it.enclosingElement.hasAnnotation(REGISTER) }
+        .forEach {
+          error("@Identifier must be used in a @Register-annotated type.", it)
+        }
+
     env.getElementsAnnotatedWith(registryModuleType)
-        .filter { it.enclosingElement.kind != ANNOTATION_TYPE || !it.enclosingElement.hasAnnotation(REGISTER) }
+        .filter { it.enclosingElement.kind != CLASS || !it.enclosingElement.hasAnnotation(REGISTER) }
         .forEach { registryModule ->
           error("@RegistryModule must be declared as a nested type of a @Register-annotated type.",
               registryModule)
@@ -117,7 +130,7 @@ class RegistryProcessor : AbstractProcessor() {
         // Dagger guarantees this property is present and is an array of types or errors.
         val includes = moduleAnnotation.getValue("includes", elements)!!
             .cast<MirrorValue.Array>()
-            .filterIsInstance<MirrorValue.Type>()
+            .filterIsInstance<Type>()
 
         val generatedModuleName = (userModule.enclosingElement as TypeElement).toClassName().registryInjectionModuleName()
         val referencesGeneratedModule = includes
@@ -160,19 +173,63 @@ class RegistryProcessor : AbstractProcessor() {
         .map { asTypeElement(it.value) }
         .toSet()
 
+    val invalidBinders = binders.filter { binder ->
+      var invalid = false
+      val defaultConstructor = binder.enclosedElements.filter { it.kind == CONSTRUCTOR }
+          .castEach<ExecutableElement>()
+          .singleOrNull { it.parameters.isEmpty() }
+      if (defaultConstructor == null) {
+        error("Binder must have default constructor.", binder)
+        invalid = true
+      } else if (PUBLIC !in defaultConstructor.modifiers) {
+        error("Binder's constructor must be public.", binder)
+        invalid = true
+      }
+      invalid
+    }
+    if (invalidBinders.isNotEmpty()) {
+      return null
+    }
+
     val binderViewHolders =
       (getAnnotationValue(registerAnnotation, "binderViewHolders") as Attribute.Array).value
           .filterIsInstance<Attribute.Class>()
           .map { asTypeElement(it.value) }
           .toSet()
 
-    val staticContentLayoutsValue =
-      (getAnnotationValue(registerAnnotation, "staticContentLayouts") as Attribute.Array).value
-    val staticContentLayouts = staticContentLayoutsValue.filterIsInstance<Attribute.Constant>()
-        .mapNotNull { it.value as? Int }
-        .toSet()
+    val identifiers = enclosedElements.filter { it.kind == METHOD }
+        .castEach<ExecutableElement>()
+        .filter { it.hasAnnotation(IDENTIFIER) }
 
-    return RegistryElements(this, registryModuleTypeElement, binders, binderViewHolders, staticContentLayouts)
+    val invalidIdentifiers = identifiers.filter { identifier ->
+      var invalid = false
+      if (PRIVATE in identifier.modifiers) {
+        error("@Identifier-annotated methods must not be private.", identifier)
+        invalid = true
+      }
+      if (STATIC !in identifier.modifiers) {
+        error("@Identifier-annotated methods must be static.", identifier)
+        invalid = true
+      }
+      if (identifier.parameters.size != 1) {
+        error("@Identifier-annotated methods must have one parameter.", identifier)
+        invalid = true
+      }
+      if (identifier.parameters.single().asType().toTypeName() !is ClassName) {
+        error("@Identifier-annotated methods's parameters must be erasure types.", identifier)
+        invalid = true
+      }
+      if (identifier.returnType.toTypeName() != TypeName.BOOLEAN) {
+        error("@Identifier-annotated methods must return boolean.", identifier)
+        invalid = true
+      }
+      invalid
+    }
+    if (invalidIdentifiers.isNotEmpty()) {
+      return null
+    }
+
+    return RegistryElements(this, registryModuleTypeElement, binders, binderViewHolders, identifiers)
   }
 
   private fun RegistryElements.toRegistryClassOrNull(): RegistryClass? {
@@ -180,43 +237,115 @@ class RegistryProcessor : AbstractProcessor() {
 
     val viewTypes = mutableMapOf<TypeName, Int>()
     val builders = mutableMapOf<ClassName, BindingSet.Builder>()
+    val identifiers = identifiers.groupBy(
+        { it.parameters.single().asType().toTypeName().rawClassName() },
+        { it to (it.getAnnotation(IDENTIFIER)!!.getValue("value", elements) as? Type)?.value?.toTypeName() }
+    ).toMutableMap()
 
-    val binderBindings = binders.map { it.binderToBinding(viewTypes) }
-    val binderViewHolderBindings = binderViewHolders.map { it.binderViewHolderToBinding(viewTypes) }
+    val binderBindings = binders.map { it.binderToBindingOrNull(viewTypes, identifiers) }
+    val binderViewHolderBindings = binderViewHolders.map { it.binderViewHolderToBindingOrNull(viewTypes, identifiers) }
     (binderBindings + binderViewHolderBindings).forEach { binding ->
+      if (binding == null) {
+        return null
+      }
       try {
-        builders.getOrPut(binding.dataRawType, { BindingSet.Builder(binding.dataRawType) }).add(binding)
+        builders.getOrPut(binding.dataRawType, { BindingSet.Builder(binding.dataRawType) }).addOrThrow(binding)
       } catch (e: DuplicateBindingException) {
         processingEnv.messager.printMessage(ERROR, e.message, targetType, registerAnnotation)
         return null
       }
     }
 
-    val registeredAnnotation = targetType.toClassName()
+    val bindingSets = builders.values.map { builder ->
+      val bindingSet = builder.build()
+      val bindings = bindingSet.bindings
+      if (bindings.size > 1) {
+        val identifierNames = bindings.mapNotNull { binding -> binding.identifier }
+        if (identifierNames.size != bindings.size - 1) {
+          error("""
+              |${bindingSet.dataRawType} binds to ${bindings.size} ViewHolders. Provide @Identifier(s) for any ${bindings.size - 1} of them. Found ${identifierNames.size}:
+              |
+              |${bindings.joinToString("\n\n") { binding ->  "${binding.identifier?.let { "[Provided] $it" } ?: "[Missing] ?"}\n ${binding.dataType}\n-> ${binding.viewHolderType} ${if (binding.targetIsBinder)"\n(${binding.targetType})" else ""}" }}
+              |""".trimMargin(), targetType)
+          return null
+        }
+      }
+      bindingSet
+    }
+
+    val unusedIdentifiers = identifiers.filterNotNullValues()
+        .filterNot { it.value.isEmpty() }
+        .flatMap { it.value.map { pair -> pair.first } }
+    unusedIdentifiers.forEach {
+      error("Useless @Identifier:\n$it".trimMargin(), it)
+    }
+
+    val targetClassName = targetType.toClassName()
     val public = PUBLIC in targetType.modifiers
     val injected = registryModuleElement != null
-    val bindingSets = builders.values.map { it.build() }
     val indexedViewHolderTypes = viewTypes.map { Pair(it.value, it.key) }
-    val staticContentLayouts =
-      idScanner.elementToIds(targetType, registerAnnotation, staticContentLayouts).values.toList()
-    return RegistryClass(
-        registeredAnnotation, public, injected, bindingSets, indexedViewHolderTypes, staticContentLayouts)
+
+    return RegistryClass(targetClassName, public, injected, bindingSets, indexedViewHolderTypes)
   }
 
   private fun MutableMap<TypeName, Int>.getViewType(viewHolderType: TypeName): Int =
     getOrPut(viewHolderType, { size })
 
-  private fun TypeElement.binderToBinding(viewTypes: MutableMap<TypeName, Int>): Binding {
+  private fun TypeElement.binderToBindingOrNull(
+    viewTypes: MutableMap<TypeName, Int>,
+    identifiers: MutableMap<ClassName, List<Pair<ExecutableElement, TypeName?>>>
+  ): Binding? {
     val binderType = toClassName()
     val dataType = typeArgumentOf(BINDER, 0)!!.toTypeName()
     val viewHolderType = typeArgumentOf(BINDER, 1)!!.toTypeName()
-    return Binding(binderType, true, dataType, viewHolderType, viewTypes.getViewType(viewHolderType))
+    val identifier = try {
+      identifiers.getAndRemoveIdentifierOrNull(dataType.rawClassName(), viewHolderType, binderType)
+    } catch (e: DuplicateIdentifierException) {
+      return null
+    }
+    return Binding(binderType, true, dataType, viewHolderType, viewTypes.getViewType(viewHolderType), identifier)
   }
 
-  private fun TypeElement.binderViewHolderToBinding(viewTypes: MutableMap<TypeName, Int>): Binding {
+  private fun TypeElement.binderViewHolderToBindingOrNull(
+    viewTypes: MutableMap<TypeName, Int>,
+    identifiers: MutableMap<ClassName, List<Pair<ExecutableElement, TypeName?>>>
+  ): Binding? {
     val dataType = typeArgumentOf(BINDER_VIEW_HOLDER, 0)!!.toTypeName()
     val viewHolderType = toClassName()
-    return Binding(viewHolderType, false, dataType, viewHolderType, viewTypes.getViewType(viewHolderType))
+    val identifier = try {
+      identifiers.getAndRemoveIdentifierOrNull(dataType.rawClassName(), viewHolderType, null)
+    } catch (e: DuplicateIdentifierException) {
+      return null
+    }
+    return Binding(viewHolderType, false, dataType, viewHolderType, viewTypes.getViewType(viewHolderType), identifier)
+  }
+
+  private fun MutableMap<ClassName, List<Pair<ExecutableElement, TypeName?>>>.getAndRemoveIdentifierOrNull(
+    dataType: ClassName,
+    viewHolderType: TypeName,
+    binderType: ClassName?
+  ): ExecutableElement? {
+    val identifiers = this[dataType].orEmpty().toMutableList()
+    val identifierCandidates = identifiers.filter { it.second == viewHolderType }
+    return when {
+      identifierCandidates.size == 1 -> {
+        val result = identifierCandidates.single()
+        identifiers.remove(result)
+        this[dataType] = identifiers
+        result.first
+      }
+      identifierCandidates.size > 1 -> {
+        error("""
+            |Multiple @Identifier-annotated methods for
+            |$dataType
+            |-> $viewHolderType${if (binderType != null) "\n($binderType)" else ""}:
+            |
+            |${identifierCandidates.joinToString("\n") { it.first.toString() }}""".trimMargin(),
+            identifierCandidates.first().first)
+        throw DuplicateIdentifierException()
+      }
+      else -> null
+    }
   }
 
   private fun writeRegistry(
@@ -301,7 +430,7 @@ class RegistryProcessor : AbstractProcessor() {
     val registryModuleElement: TypeElement?,
     val binders: Set<TypeElement>,
     val binderViewHolders: Set<TypeElement>,
-    val staticContentLayouts: Set<Int>
+    val identifiers: List<ExecutableElement>
   )
 
   private data class RegistryModuleElements(

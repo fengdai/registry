@@ -11,7 +11,7 @@ data class BindingSet(
   class Builder(private val dataRawType: ClassName) {
     private val bindings = mutableMapOf<TypeName, Binding>()
 
-    fun add(binding: Binding) {
+    fun addOrThrow(binding: Binding) {
       require(binding.dataRawType == dataRawType)
 
       val viewHolderType = binding.viewHolderType

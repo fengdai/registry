@@ -3,14 +3,14 @@ package com.example.model;
 import android.support.annotation.DrawableRes;
 
 public class Card {
-  public final int drawableId;
+  public final Integer drawableId;
   public final String text;
 
   public Card(String text) {
-    this(text, -1);
+    this(text, null);
   }
 
-  public Card(String text, @DrawableRes int drawableId) {
+  public Card(String text, @DrawableRes Integer drawableId) {
     this.drawableId = drawableId;
     this.text = text;
   }
