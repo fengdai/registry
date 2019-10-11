@@ -5,11 +5,10 @@ import android.support.v7.widget.RecyclerView;
 import android.view.ViewGroup;
 import java.util.List;
 
-public abstract class RegistryAdapter<ItemT>
-    extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-  private final Registry<ItemT> registry;
+public abstract class RegistryAdapter<T> extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+  private final Registry registry;
 
-  protected RegistryAdapter(Registry<ItemT> registry) {
+  protected RegistryAdapter(Registry registry) {
     this.registry = registry;
   }
 
@@ -31,5 +30,5 @@ public abstract class RegistryAdapter<ItemT>
     return registry.getItemViewType(getItem(position));
   }
 
-  public abstract ItemT getItem(int position);
+  public abstract T getItem(int position);
 }
