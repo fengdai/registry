@@ -9,23 +9,31 @@ Say, we have a RecyclerView which displays two kinds of item: Foo and Bar. It al
 1. Extend `BinderViewHolder` to define your ViewHolders.
 ```java
 public class FooViewHolder extends BinderViewHolder<Foo> {
-  public FooViewHolder(View itemView) {
-    super(itemView)
+  private final TextView text;
+
+  public FooViewHolder(LayoutInflater layoutInflater, ViewGroup parent) {
+    super(layoutInflater.inflate(android.R.layout.activity_list_item, parent, false));
+    ImageView icon = itemView.findViewById(android.R.id.icon);
+    icon.setImageResource(R.mipmap.ic_launcher);
+    this.text = itemView.findViewById(android.R.id.text1);
   }
 
   @Override public void bind(Foo data) {
-    // Do binding.
+    text.setText(data.text);
   }
 }
 ```
 ```java
 public class BarViewHolder extends BinderViewHolder<Bar> {
-  public BarViewHolder(View itemView) {
-    super(itemView)
+  private final TextView text;
+
+  public BarViewHolder(LayoutInflater layoutInflater, ViewGroup parent) {
+    super(layoutInflater.inflate(android.R.layout.simple_list_item_1, parent, false));
+    this.text = (TextView) itemView;
   }
 
   @Override public void bind(Bar data) {
-    // Do binding.
+    text.setText(data.text);
   }
 }
 ```
@@ -54,8 +62,8 @@ public interface SampleRegistry {
 3. Create RecyclerView.Adapter:
 ```java
 AdapterDelegate<SampleRegistry.Item> adapterDelegate = new SampleRegistry_Impl.AdapterDelegate(
-    parent -> new FooViewHolder(layoutInflater.inflate(R.layout.foo, parent, false)),
-    parent -> new BarViewHolder((TextView) layoutInflater.inflate(R.layout.bar, parent, false)));
+    parent -> new BarViewHolder(layoutInflater, parent),
+    parent -> new FooViewHolder(layoutInflater, parent));
 RegistryListAdapter<SampleRegistry.Item> adapter = new RegistryListAdapter<>(adapterDelegate, new DiffCallback());
 ```
 
