@@ -1,18 +1,19 @@
 # Registry
 
-Registry helps you use ViewHolders to modularize RecyclerView and compose them easily.
+Registry helps you use ViewHolders to modularize RecyclerView and compose them easily. It also supports Dagger2 based ViewHolder injection.
 
-# Example
+# Example with assisted ViewHolder injection:
 
 Say, we have a RecyclerView which displays two kinds of item: Foo and Bar. It also has a footer which shows static content like "end".
 
-1. Extend `BinderViewHolder` to define your ViewHolders.
+1. Extend `BinderViewHolder` to define your ViewHolders and use `@ViewHolderInject` for ViewHolder injection.
 ```java
 public class FooViewHolder extends BinderViewHolder<Foo> {
   private final TextView text;
 
-  public FooViewHolder(LayoutInflater layoutInflater, ViewGroup parent) {
-    super(layoutInflater.inflate(android.R.layout.activity_list_item, parent, false));
+  @ViewHolderInject
+  public FooViewHolder(@Inflate(android.R.layout.activity_list_item) View itemView) {
+    super(itemView);
     ImageView icon = itemView.findViewById(android.R.id.icon);
     icon.setImageResource(R.mipmap.ic_launcher);
     this.text = itemView.findViewById(android.R.id.text1);
@@ -27,9 +28,11 @@ public class FooViewHolder extends BinderViewHolder<Foo> {
 public class BarViewHolder extends BinderViewHolder<Bar> {
   private final TextView text;
 
-  public BarViewHolder(LayoutInflater layoutInflater, ViewGroup parent) {
-    super(layoutInflater.inflate(android.R.layout.simple_list_item_1, parent, false));
-    this.text = (TextView) itemView;
+  @ViewHolderInject
+  public BarViewHolder(@Inflate(android.R.layout.simple_list_item_1) TextView itemView, View.OnClickListener onClickListener) {
+    super(itemView);
+    this.text = itemView;
+    itemView.setOnClickListener(onClickListener);
   }
 
   @Override public void bind(Bar data) {
@@ -38,7 +41,7 @@ public class BarViewHolder extends BinderViewHolder<Bar> {
 }
 ```
 
-2. Define your Registry interface:
+2. Define your Registry interface and Dagger module:
 ```java
 @Registry
 public interface SampleRegistry {
@@ -56,18 +59,37 @@ public interface SampleRegistry {
   // Binds a layout 'footer' which has a TextView showing "end"
   @BindsLayout(R.layout.footer)
   Item footerItem();
+
+  @Registry.Module
+  @dagger.Module(includes = SampleRegistry_RegistryModule.class)
+  abstract class Module {
+  }
 }
 ```
 
-3. Create RecyclerView.Adapter:
+3. Add the Dagger module to your Dagger component:
 ```java
-AdapterDelegate<SampleRegistry.Item> adapterDelegate = new SampleRegistry_Impl.AdapterDelegate(
-    parent -> new BarViewHolder(layoutInflater, parent),
-    parent -> new FooViewHolder(layoutInflater, parent));
+@Component(modules = SampleRegistry.Module.class)
+interface SampleRegistryComponent {
+
+  SampleRegistry_Impl.AdapterDelegate adapterDelegate();
+
+  @Component.Factory
+  interface Factory {
+    SampleRegistryComponent create(@BindsInstance View.OnClickListener onClickListener);
+  }
+}
+```
+
+4. Create RecyclerView.Adapter:
+```java
+AdapterDelegate<SampleRegistry.Item> adapterDelegate = DaggerSampleRegistryComponent.factory()
+        .create(v -> { ... })
+        .adapterDelegate();
 RegistryListAdapter<SampleRegistry.Item> adapter = new RegistryListAdapter<>(adapterDelegate, new DiffCallback());
 ```
 
-4. Render RecyclerView:
+5. Render RecyclerView:
 ```java
 SampleRegistry sampleRegistry = new SampleRegistry_Impl();
 adapter.submitList(Arrays.asList(
@@ -76,8 +98,6 @@ adapter.submitList(Arrays.asList(
   sampleRegistry.footerItem())); // create the footer item
 ```
 
-Done.:tada:
-
 # More details
 
 * [Simple example](https://github.com/fengdai/registry/tree/master/registry-sample)
@@ -85,12 +105,15 @@ Done.:tada:
 
 # Download
 
-Gradle:
 ```groovy
-dependencies {
-  implementation 'com.github.fengdai:registry:0.2.0'
-  annotationProcessor 'com.github.fengdai:registry-compiler:0.2.0'
-}
+implementation 'com.github.fengdai:registry:0.2.0'
+annotationProcessor 'com.github.fengdai:registry-processor:0.2.0'
+```
+
+Assisted ViewHolder injection:
+```groovy
+implementation 'com.github.fengdai.inject:viewholder-inject:0.2.0'
+annotationProcessor 'com.github.fengdai.inject:viewholder-inject-processor:0.2.0'
 ```
 
 # License
