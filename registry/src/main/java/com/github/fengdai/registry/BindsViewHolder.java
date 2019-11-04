@@ -7,11 +7,11 @@ import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 /**
- * Identifies item factory methods. Binds the returned item instances to the specific {@link
+ * Identifies an item factory method. Binds the returned item instances to the specific {@link
  * BinderViewHolder}.
  * <p>
  * Annotated factory methods must have a parameter of a data type which the returned item is
- * related to.
+ * corresponding to.
  *
  * @see Registry
  */

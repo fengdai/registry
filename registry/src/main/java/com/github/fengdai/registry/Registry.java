@@ -10,12 +10,12 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
  * Identifies a registry interface for a specific RecyclerView.
  * <p>
  * For type-safe reason, a registry interface must have a nested interface which extends
- * {@link RegistryItem} and annotated by {@link Item @Reigstry.Item}. The interface is used as the
- * item type for the specific RecyclerView and can avoid user from adding a RecyclerView's item to
+ * {@link RegistryItem} and annotated with {@link Item @Reigstry.Item}. The interface is used as the
+ * item type for the specific RecyclerView and can keep user from adding a RecyclerView's item to
  * another.
  * <p>
  * The registry interface must also contain abstract methods returning the defined item type.
- * They are item factories and must be annotated by {@link BindsViewHolder @BindsViewHolder},
+ * They are item factories and must be annotated with {@link BindsViewHolder @BindsViewHolder},
  * {@link BindsBinder @BindsBinder} or {@link BindsLayout @BindsLayout} which reveal the
  * {@link BinderViewHolder}, {@link Binder} or layout that the created item will be bound to.
  * <p>
@@ -24,10 +24,10 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
  * item factories and a {@link AdapterDelegate} which is used to help RecyclerView.Adapter to deal
  * with the items and ViewHolder creation.
  * <p>
- * If you use Dagger to do dependency injection with ViewHolders, you can use
+ * If you want to use Dagger to do dependency injection with ViewHolders, you can use
  * {@link Module @Reigstry.Module} to define a nested Dagger module and the processor will generate
  * a ViewHolder module for the registry and the generated {@link AdapterDelegate} implementation
- * will also have a @Inject-annotated constructor.
+ * will also have an injectable constructor annotated with @Inject.
  *
  * @see BindsViewHolder
  * @see BindsBinder

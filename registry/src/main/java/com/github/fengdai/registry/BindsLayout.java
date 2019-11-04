@@ -8,7 +8,7 @@ import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 /**
- * Identifies item factory methods. Binds the returned item instances to the specific layout.
+ * Identifies an item factory method. Binds the returned item instances to the specific layout.
  * <p>
  * Annotated factory methods can't have parameter.
  *
