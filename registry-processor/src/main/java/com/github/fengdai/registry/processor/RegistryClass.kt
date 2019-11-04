@@ -12,7 +12,6 @@ import com.squareup.javapoet.ParameterSpec
 import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
 import com.squareup.javapoet.TypeSpec
-import java.util.Locale
 import javax.lang.model.element.Modifier.FINAL
 import javax.lang.model.element.Modifier.PRIVATE
 import javax.lang.model.element.Modifier.PUBLIC
@@ -26,6 +25,7 @@ private val SPARSE_ARRAY = ClassName.get("android.util", "SparseArray")
 private val VIEW_HOLDER = ClassName.get("android.support.v7.widget", "RecyclerView", "ViewHolder")
 private val LAYOUT_VIEW_HOLDER_FACTORY = ClassName.get("com.github.fengdai.registry.internal", "LayoutViewHolderFactory")
 private val BINDERS = ClassName.get("com.github.fengdai.registry.internal", "Binders")
+private val DATA_RESOLVER = ClassName.get("com.github.fengdai.registry.internal", "DataResolver")
 
 data class RegistryClass(
   val targetType: ClassName,
@@ -54,21 +54,19 @@ data class RegistryClass(
         .addSuperinterface(targetType)
         .applyEach(bindingSets) {
           it.bindings.forEach { binding ->
-            val binderStaticField: FieldSpec? = if (binding.targetIsBinder) {
-              val binderStaticField =
-                FieldSpec.builder(BINDER, binding.binderFieldName, PRIVATE, STATIC, FINAL)
-                    .initializer(CodeBlock.of("new \$T()", binding.targetType))
-                    .build()
-              addField(binderStaticField)
-              binderStaticField
-            } else null
+            val dataResolverField =
+              FieldSpec.builder(DATA_RESOLVER, binding.dataResolverFieldName, PRIVATE, FINAL)
+                  .initializer(CodeBlock.of(
+                      "new \$T(\$L, \$L)", DATA_RESOLVER, binding.viewType,
+                      if (binding.targetIsBinder) CodeBlock.of("new \$T()", binding.targetType)
+                      else CodeBlock.of("\$T.BINDER_VIEW_HOLDER_BINDER", BINDERS)))
+                  .build()
+            addField(dataResolverField)
             addMethod(MethodSpec.overriding(binding.factoryMethod)
                 .addStatement(CodeBlock.of(
-                    "return new \$T(\$L, \$L, \$L)", generatedItemType,
+                    "return new \$T(\$L, \$N)", generatedItemType,
                     binding.factoryMethod.parameters.single().simpleName,
-                    binding.viewType,
-                    if (binderStaticField != null) CodeBlock.of("\$N", binderStaticField)
-                    else CodeBlock.of("\$T.BINDER_VIEW_HOLDER_BINDER", BINDERS)))
+                    dataResolverField))
                 .build())
           }
         }
@@ -77,9 +75,9 @@ data class RegistryClass(
           val factoryMethod = layoutBinding.factoryMethod
           val layout = layoutBinding.layout
           val field =
-            FieldSpec.builder(itemType, layout.resourceName?.toUpperCase(Locale.US) + "_ITEM")
-                .addModifiers(PRIVATE, FINAL, STATIC)
-                .initializer("new \$T(\$L, \$L, null)", generatedItemType, layout.code, viewType)
+            FieldSpec.builder(itemType, "item_" + layout.resourceName)
+                .addModifiers(PRIVATE, FINAL)
+                .initializer("new \$T(\$L, new \$T(\$L, null))", generatedItemType, layout.code, DATA_RESOLVER, viewType)
                 .build()
           addField(field)
           addMethod(MethodSpec.overriding(factoryMethod)
@@ -90,19 +88,12 @@ data class RegistryClass(
             .addSuperinterface(itemType)
             .addModifiers(STATIC, PRIVATE, FINAL)
             .addField(TypeName.OBJECT, "data", PRIVATE, FINAL)
-            .addField(TypeName.INT, "viewType", PRIVATE, FINAL)
-            .addField(FieldSpec.builder(BINDER, "binder", PRIVATE, FINAL)
-                .addAnnotation(Nullable::class.java)
-                .build())
+            .addField(DATA_RESOLVER, "dataResolver", PRIVATE, FINAL)
             .addMethod(MethodSpec.constructorBuilder()
                 .addParameter(TypeName.OBJECT, "data")
-                .addParameter(TypeName.INT, "viewType")
-                .addParameter(ParameterSpec.builder(BINDER, "binder")
-                    .addAnnotation(Nullable::class.java)
-                    .build())
+                .addParameter(DATA_RESOLVER, "dataResolver")
                 .addStatement("this.data = data")
-                .addStatement("this.viewType = viewType")
-                .addStatement("this.binder = binder")
+                .addStatement("this.dataResolver = dataResolver")
                 .build())
             .addMethod(MethodSpec.methodBuilder("getData")
                 .addModifiers(PUBLIC)
@@ -114,14 +105,14 @@ data class RegistryClass(
                 .addModifiers(PUBLIC)
                 .addAnnotation(Override::class.java)
                 .returns(TypeName.INT)
-                .addStatement("return viewType")
+                .addStatement("return dataResolver.viewType")
                 .build())
             .addMethod(MethodSpec.methodBuilder("getBinder")
                 .addModifiers(PUBLIC)
                 .addAnnotation(Nullable::class.java)
                 .addAnnotation(Override::class.java)
                 .returns(BINDER)
-                .addStatement("return binder")
+                .addStatement("return dataResolver.binder")
                 .build())
             .build())
         .addType(TypeSpec.classBuilder(generatedAdapterDelegateType)
@@ -169,4 +160,4 @@ data class RegistryClass(
   }
 }
 
-private val Binding.binderFieldName get() = targetType.reflectionName().replace('.', '_').toUpperCase(Locale.US)
+private val Binding.dataResolverFieldName get() = "resolver_" + factoryMethod.simpleName + "_" + dataRawType.reflectionName().replace('.', '_')
