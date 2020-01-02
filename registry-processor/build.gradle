@@ -14,7 +14,7 @@ dependencies {
   implementation deps.kotlin
   implementation deps.autoCommon
   implementation deps.javaPoet
-  implementation deps.incap.runtime
+  compileOnly deps.incap.runtime
   kapt deps.incap.processor
   testImplementation deps.junit
 }
