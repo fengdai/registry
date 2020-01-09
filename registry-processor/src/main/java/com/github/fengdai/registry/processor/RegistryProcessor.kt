@@ -369,7 +369,8 @@ class RegistryProcessor : AbstractProcessor() {
     val dataType = binderElement.typeArgumentOf(BINDER, 0)!!
     val parameterDataType =  parameters.single().asType()
     if (!types.isAssignable(dataType, parameterDataType)) {
-      error("@BindsBinder methods' parameter type must be assignable to the Binder's data type.", this)
+      error("@BindsBinder methods' parameter type must be assignable to the Binder's data type.\n"
+          + "[$parameterDataType] is not assignable to \n[$dataType]", this)
       return null
     }
     val dataTypeName = dataType.toTypeName()
@@ -383,7 +384,8 @@ class RegistryProcessor : AbstractProcessor() {
     val dataType = binderViewHolderElement.typeArgumentOf(BINDER_VIEW_HOLDER, 0)!!
     val parameterDataType =  parameters.single().asType()
     if (!types.isAssignable(dataType, parameterDataType)) {
-      error("@BindsViewHolder methods' parameter type must be assignable to the BinderViewHolder's data type.", this)
+      error("@BindsViewHolder methods' parameter type must be assignable to the BinderViewHolder's data type.\n"
+          + "[$parameterDataType] is not assignable to \n[$dataType]", this)
       return null
     }
     val dataTypeName = dataType.toTypeName()
