@@ -16,6 +16,7 @@ private val PROVIDER = ClassName.get("javax.inject", "Provider")
 private val MODULE = ClassName.get("dagger", "Module")
 private val BINDS = ClassName.get("dagger", "Binds")
 private val PROVIDES = ClassName.get("dagger", "Provides")
+private val ADAPTER_DELEGATE = ClassName.get("com.github.fengdai.registry", "AdapterDelegate")
 private val VIEW_HOLDER_FACTORIES =
   ClassName.get("com.github.fengdai.registry.internal", "ViewHolderFactories")
 
@@ -40,6 +41,12 @@ data class RegistryInjectionModule(
             MethodSpec.constructorBuilder()
                 .addModifiers(PRIVATE)
                 .build())
+        .addMethod(MethodSpec.methodBuilder("bindAdapterDelegate")
+            .addAnnotation(BINDS)
+            .addModifiers(ABSTRACT)
+            .returns(ParameterizedTypeName.get(ADAPTER_DELEGATE, targetType.nestedClass("Item")))
+            .addParameter(targetType.run { peerClassWithReflectionNesting(simpleName() + "_Impl") }.nestedClass("AdapterDelegate"), "adapterDelegate")
+            .build())
         .applyEach(viewHolderInjections) { injectedName ->
           addMethod(
               MethodSpec.methodBuilder(injectedName.bindMethodName())
