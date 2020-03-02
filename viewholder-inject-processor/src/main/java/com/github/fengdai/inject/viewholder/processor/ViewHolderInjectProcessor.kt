@@ -48,7 +48,7 @@ class ViewHolderInjectProcessor : AbstractProcessor() {
     filer = env.filer
     messager = env.messager
     idScanner = IdScanner(env)
-    viewHolderType = elements.getTypeElement("android.support.v7.widget.RecyclerView.ViewHolder").asType()
+    viewHolderType = elements.getTypeElement("androidx.recyclerview.widget.RecyclerView.ViewHolder").asType()
     viewType = elements.getTypeElement("android.view.View").asType()
     viewGroupType = elements.getTypeElement("android.view.ViewGroup").asType()
   }

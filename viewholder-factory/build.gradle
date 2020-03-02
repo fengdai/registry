@@ -6,7 +6,7 @@ targetCompatibility = JavaVersion.VERSION_1_7
 dependencies {
   compileOnly deps.android
   compileOnly deps.recyclerViewJar
-  api deps.supportAnnotations
+  api deps.androidXAnnotations
 }
 
 apply from: rootProject.file('gradle/gradle-mvn-push.gradle')

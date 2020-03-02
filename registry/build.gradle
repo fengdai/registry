@@ -7,7 +7,7 @@ dependencies {
   api project(':viewholder-factory')
   compileOnly deps.android
   compileOnly deps.recyclerViewJar
-  compileOnly deps.supportAnnotations
+  compileOnly deps.androidXAnnotations
   compileOnly deps.inject
 }
 

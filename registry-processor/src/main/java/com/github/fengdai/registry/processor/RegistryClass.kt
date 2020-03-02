@@ -1,7 +1,7 @@
 package com.github.fengdai.registry.processor
 
-import android.support.annotation.NonNull
-import android.support.annotation.Nullable
+import androidx.annotation.NonNull
+import androidx.annotation.Nullable
 import com.github.fengdai.registry.processor.internal.applyEach
 import com.github.fengdai.registry.processor.internal.peerClassWithReflectionNesting
 import com.squareup.javapoet.ClassName
@@ -22,7 +22,7 @@ private val ADAPTER_DELEGATE = ClassName.get("com.github.fengdai.registry", "Ada
 private val VIEW_HOLDER_FACTORY = ClassName.get("com.github.fengdai.viewholder", "ViewHolderFactory")
 private val VIEW_GROUP = ClassName.get("android.view", "ViewGroup")
 private val SPARSE_ARRAY = ClassName.get("android.util", "SparseArray")
-private val VIEW_HOLDER = ClassName.get("android.support.v7.widget", "RecyclerView", "ViewHolder")
+private val VIEW_HOLDER = ClassName.get("androidx.recyclerview.widget", "RecyclerView", "ViewHolder")
 private val LAYOUT_VIEW_HOLDER_FACTORY = ClassName.get("com.github.fengdai.registry.internal", "LayoutViewHolderFactory")
 private val BINDERS = ClassName.get("com.github.fengdai.registry.internal", "Binders")
 private val DATA_RESOLVER = ClassName.get("com.github.fengdai.registry.internal", "DataResolver")

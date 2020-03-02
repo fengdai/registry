@@ -1,6 +1,6 @@
 package com.github.fengdai.registry.internal;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import com.github.fengdai.registry.Binder;
 
 public final class DataResolver {

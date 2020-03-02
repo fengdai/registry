@@ -7,7 +7,7 @@ ext.versions = [
 ext.deps = [
     'dagger': "com.google.dagger:dagger:${versions.dagger}",
     'daggerCompiler': "com.google.dagger:dagger-compiler:${versions.dagger}",
-    'autoService': 'com.google.auto.service:auto-service:1.0-rc4',
+    'autoService': 'com.google.auto.service:auto-service:1.0-rc6',
     'autoCommon': 'com.google.auto:auto-common:0.10',
     'junit': 'junit:junit:4.12',
     'truth': 'com.google.truth:truth:0.42',
@@ -18,9 +18,9 @@ ext.deps = [
     'robolectric': 'org.robolectric:robolectric:4.0-alpha-3',
     'inject': 'javax.inject:javax.inject:1',
     'android': 'com.google.android:android:4.1.1.4',
-    'recyclerView': 'com.android.support:recyclerview-v7:28.0.0',
-    'recyclerViewJar': fileTree(dir: "$rootDir/lib", include: ['recyclerview-v7-28.0.0.jar', 'support-compat-28.0.0.jar']),
-    'supportAnnotations': 'com.android.support:support-annotations:28.0.0',
+    'recyclerView': 'androidx.recyclerview:recyclerview:1.1.0',
+    'recyclerViewJar': fileTree(dir: "$rootDir/lib", include: ['recyclerview-1.1.0.jar', 'core-1.1.0.jar']),
+    'androidXAnnotations': 'androidx.annotation:annotation:1.1.0',
     'incap': [
         'runtime': "net.ltgt.gradle.incap:incap:${versions.incap}",
         'processor': "net.ltgt.gradle.incap:incap-processor:${versions.incap}",

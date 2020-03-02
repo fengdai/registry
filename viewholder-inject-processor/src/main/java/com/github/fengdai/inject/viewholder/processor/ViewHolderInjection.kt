@@ -1,6 +1,6 @@
 package com.github.fengdai.inject.viewholder.processor
 
-import android.support.annotation.NonNull
+import androidx.annotation.NonNull
 import com.github.fengdai.inject.viewholder.Inflation
 import com.github.fengdai.inject.viewholder.processor.DependencyRequest.Inflate
 import com.github.fengdai.inject.viewholder.processor.DependencyRequest.Parent

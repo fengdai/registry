@@ -1,8 +1,8 @@
 package com.github.fengdai.registry.internal;
 
-import android.support.annotation.NonNull;
-import android.support.v7.widget.RecyclerView;
 import android.view.ViewGroup;
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 import com.github.fengdai.viewholder.ViewHolderFactory;
 import javax.inject.Provider;
 

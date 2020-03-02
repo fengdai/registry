@@ -1,6 +1,6 @@
 package com.github.fengdai.registry.internal;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.github.fengdai.registry.Binder;
 import com.github.fengdai.registry.BinderViewHolder;
 import java.util.List;
