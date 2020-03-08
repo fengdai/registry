@@ -106,14 +106,14 @@ adapter.submitList(Arrays.asList(
 # Download
 
 ```groovy
-implementation 'com.github.fengdai:registry:0.3.0'
-annotationProcessor 'com.github.fengdai:registry-processor:0.3.0'
+implementation 'com.github.fengdai:registry:0.4.0'
+annotationProcessor 'com.github.fengdai:registry-processor:0.4.0'
 ```
 
 Assisted ViewHolder injection:
 ```groovy
-implementation 'com.github.fengdai.inject:viewholder-inject:0.3.0'
-annotationProcessor 'com.github.fengdai.inject:viewholder-inject-processor:0.3.0'
+implementation 'com.github.fengdai.inject:viewholder-inject:0.4.0'
+annotationProcessor 'com.github.fengdai.inject:viewholder-inject-processor:0.4.0'
 ```
 
 # License
